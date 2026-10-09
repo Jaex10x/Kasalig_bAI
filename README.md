@@ -36,11 +36,11 @@ Update this section to match the technologies actually used in the project.
 
 | Name            | Role                      |
 | --------------- | ------------------------- |
-| [Team Member 1] | Project Manager           |
-| [Team Member 2] | Frontend Developer        |
-| [Team Member 3] | Backend Developer         |
-| [Team Member 4] | AI Integration            |
-| [Team Member 5] | Documentation and Testing |
+| [Not yet assigned] | Project Manager           |
+| [Not yet assigned] | Frontend Developer        |
+| [Not yet assigned] | Backend Developer         |
+| [Not yet assigned] | AI Integration            |
+| [Not yet assigned] | Documentation and Testing |
 
 *Replace the sample names and roles with your actual team assignments.*
 
