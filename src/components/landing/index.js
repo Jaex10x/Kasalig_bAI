@@ -1,0 +1,10 @@
+export * from './Icons';
+export { Navbar } from './Navbar';
+export { HeroSection } from './HeroSection';
+export { QuizDemo } from './QuizDemo';
+export { ProblemSection } from './ProblemSection';
+export { FeedbacksSection } from './FeedbacksSection';
+export { LearningCycleSection } from './LearningCycleSection';
+export { ClassroomSection } from './ClassroomSection';
+export { EasiestWaySection } from './EasiestWaySection';
+export { Footer } from './Footer';
