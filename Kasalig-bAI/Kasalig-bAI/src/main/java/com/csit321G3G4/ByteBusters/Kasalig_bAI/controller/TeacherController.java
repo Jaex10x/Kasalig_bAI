@@ -2,13 +2,10 @@ package com.csit321G3G4.ByteBusters.Kasalig_bAI.controller;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.StudentEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.TeacherEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.service.TeacherService;
-
-import java.security.Principal;
 import java.util.List;
 
 /** TEACHER: read own account; Create, Read, Update her own students. */
@@ -29,9 +26,9 @@ public class TeacherController {
         return teacherService.getMyAccount(teacherId);
     }
 
-    @GetMapping("/getStudents")
-    public List<StudentEntity> getMyStudents(@PathVariable Integer teacherId) {
-        return teacherService.getMyStudents(teacherId);
+    @GetMapping("/getAllStudents")
+    public List<StudentEntity> getAllStudents() {
+        return teacherService.getAllStudents();
     }
 
     @GetMapping("/students/{studentId}")

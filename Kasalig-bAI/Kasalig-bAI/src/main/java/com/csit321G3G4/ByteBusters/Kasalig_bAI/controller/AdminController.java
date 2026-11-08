@@ -4,12 +4,8 @@ package com.csit321G3G4.ByteBusters.Kasalig_bAI.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.AdminEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.StudentEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.service.AdminService;
-
-import java.security.Principal;
 import java.util.List;
 
 /** ADMIN: read own account; Create, Read, Update, Delete students. */
