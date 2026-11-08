@@ -13,12 +13,15 @@ public class StudentController {
     @Autowired
     private StudentService sserv;
 
-    @PostMapping("/api/student/postStudent")
-    public StudentEntity postStudent(@RequestBody StudentEntity student) {
-        return sserv.postStudent(student);
-    }
+    
+
+    // @PostMapping("/postStudent")
+    // public StudentEntity postStudent(@RequestBody StudentEntity student) {
+    //     return sserv.postStudent(student);
+    // }
+
     //readAllStudents
-    @GetMapping("/api/student/getAllStudents")
+    @GetMapping("/getAllStudents")
     public List<StudentEntity> getAllStudents() {
         return sserv.getAllStudents();
     }
@@ -28,13 +31,15 @@ public class StudentController {
     //     return sserv.getStudentById(id);
     // }
 
-    @PutMapping("/api/student/updateStudent")
-    public StudentEntity updateStudent(@RequestParam int studentId, @RequestBody StudentEntity newDetails) {
-        return sserv.updateStudent(studentId, newDetails);
-    }
+    // @PutMapping("/updateStudent")
+    // public StudentEntity updateStudent(
+    //     @RequestParam int studentId, 
+    //     @RequestBody StudentEntity newDetails) {
+    //     return sserv.updateStudent(studentId, newDetails);
+    // }
 
-    @DeleteMapping("/api/student/deleteStudent/{studentId}")
-    public String deleteStudent(@PathVariable int studentId) {
-        return sserv.deleteStudent(studentId);
-    }
+    // @DeleteMapping("/deleteStudent/{studentId}")
+    // public String deleteStudent(@PathVariable int studentId) {
+    //     return sserv.deleteStudent(studentId);
+    // }
 }

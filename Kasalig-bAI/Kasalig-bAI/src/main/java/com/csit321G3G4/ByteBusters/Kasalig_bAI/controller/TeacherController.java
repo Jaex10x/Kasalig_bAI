@@ -18,7 +18,7 @@ public class TeacherController {
         return tserv.postTeacher(teacher);
     }
 
-    @GetMapping("/api/teacher/getAllTeachers")
+    @GetMapping("/getAllTeachers")
     public List<TeacherEntity> getAllTeachers() {
         return tserv.getAllTeachers();
     }
@@ -28,12 +28,12 @@ public class TeacherController {
     //     return tserv.getTeacherById(id);
     // }
 
-    @PutMapping("/api/teacher/updateTeacher")
+    @PutMapping("/updateTeacher")
     public TeacherEntity updateTeacher(@RequestParam int teacherId, @RequestBody TeacherEntity newDetails) {
         return tserv.updateTeacher(teacherId, newDetails);
     }
 
-    @DeleteMapping("/api/teacher/deleteTeacher/{teacherId}")
+    @DeleteMapping("/deleteTeacher/{teacherId}")
     public String deleteTeacher(@PathVariable int teacherId) {
         return tserv.deleteTeacher(teacherId);
     }
