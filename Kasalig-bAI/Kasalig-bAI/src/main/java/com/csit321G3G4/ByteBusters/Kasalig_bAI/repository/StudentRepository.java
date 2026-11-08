@@ -15,4 +15,5 @@ public interface StudentRepository extends JpaRepository<StudentEntity, Integer>
     Optional<StudentEntity> findByStudentIdAndTeacherTeacherId(Integer studentId, Integer teacherId);
 
     boolean existsByEmailIgnoreCase(String email);
+    long countByTeacherTeacherId(Integer teacherId);
 }
