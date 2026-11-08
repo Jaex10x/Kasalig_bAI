@@ -1,69 +1,49 @@
 package com.csit321G3G4.ByteBusters.Kasalig_bAI.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "tblstudent")
+@Table(name = "student")
 public class StudentEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int studentId;
-    private String firstName;
-    private String lastName;
+    private String fullName;
     private String email;
+    private int yearLevel;
+    @ManyToOne
+    @JoinColumn(name = "teacher_id")
+    private TeacherEntity teacher;
+    private String username;
+
+    @Transient
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
-    private String gradeLevel;
-    private String school;
 
-    public StudentEntity() {}
-
-    public int getStudentId() { 
-        return studentId; 
-    }
-    public void setStudentId(int studentId) { 
-        this.studentId = studentId; 
+    public StudentEntity() {
     }
 
-    public String getFirstName() { 
-        return firstName; 
-    }
-    public void setFirstName(String firstName) { 
-        this.firstName = firstName; 
-    }
-
-    public String getLastName() { 
-        return lastName; 
-    }
-    public void setLastName(String lastName) { 
-        this.lastName = lastName; 
+    public StudentEntity(String fullName, String email, Integer yearLevel, TeacherEntity teacher) {
+        this.fullName = fullName;
+        this.email = email;
+        this.yearLevel = yearLevel;
+        this.teacher = teacher;
     }
 
-    public String getEmail() { 
-        return email; 
-    }
-    public void setEmail(String email) { 
-        this.email = email; 
-    }
-
-    public String getPassword() { 
-        return password; 
-    }
-    public void setPassword(String password) { 
-        this.password = password; 
-    }
-
-    public String getGradeLevel() { 
-        return gradeLevel; 
-    }
-    public void setGradeLevel(String gradeLevel) { 
-        this.gradeLevel = gradeLevel; 
-    }
-
-    public String getSchool() { 
-        return school; 
-    }
-    public void setSchool(String school) { 
-        this.school = school; 
-    }
+    public int getstudentId() { return studentId; }
+    public void setId(int studentId) { this.studentId = studentId; }
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public Integer getYearLevel() { return yearLevel; }
+    public void setYearLevel(Integer yearLevel) { this.yearLevel = yearLevel; }
+    public TeacherEntity getTeacher() { return teacher; }
+    public void setTeacher(TeacherEntity teacher) { this.teacher = teacher; }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 }
