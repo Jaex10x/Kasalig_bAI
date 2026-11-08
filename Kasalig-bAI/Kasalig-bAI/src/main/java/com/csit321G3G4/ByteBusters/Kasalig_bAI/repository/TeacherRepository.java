@@ -6,5 +6,4 @@ import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.TeacherEntity;
 
 @Repository
 public interface TeacherRepository extends JpaRepository<TeacherEntity, Integer> {
-    TeacherEntity findByEmail(String email);
 }

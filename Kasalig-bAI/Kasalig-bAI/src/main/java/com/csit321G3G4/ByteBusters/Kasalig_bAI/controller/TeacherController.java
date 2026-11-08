@@ -1,40 +1,53 @@
 package com.csit321G3G4.ByteBusters.Kasalig_bAI.controller;
 
-import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.StudentEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.TeacherEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.service.TeacherService;
 
+import java.security.Principal;
+import java.util.List;
+
+/** TEACHER: read own account; Create, Read, Update her own students. */
 @RestController
 @RequestMapping("/api/teacher")
 public class TeacherController {
 
     @Autowired
-    private TeacherService tserv;
+    private TeacherService teacherService;
 
-    @PostMapping("/api/teacher/postTeacher")
-    public TeacherEntity postTeacher(@RequestBody TeacherEntity teacher) {
-        return tserv.postTeacher(teacher);
+
+    @PostMapping("/postTeacher")
+    public TeacherEntity postTeacher(@RequestBody TeacherEntity body) {
+        return teacherService.postTeacher(body);
+    }
+    @GetMapping
+    public TeacherEntity getMyAccount(@PathVariable Integer teacherId) {
+        return teacherService.getMyAccount(teacherId);
     }
 
-    @GetMapping("/getAllTeachers")
-    public List<TeacherEntity> getAllTeachers() {
-        return tserv.getAllTeachers();
+    @GetMapping("/getStudents")
+    public List<StudentEntity> getMyStudents(@PathVariable Integer teacherId) {
+        return teacherService.getMyStudents(teacherId);
     }
 
-    // @GetMapping("/getTeacher/{id}")
-    // public TeacherEntity getTeacher(@PathVariable int id) {
-    //     return tserv.getTeacherById(id);
-    // }
-
-    @PutMapping("/updateTeacher")
-    public TeacherEntity updateTeacher(@RequestParam int teacherId, @RequestBody TeacherEntity newDetails) {
-        return tserv.updateTeacher(teacherId, newDetails);
+    @GetMapping("/students/{studentId}")
+    public StudentEntity getMyStudent(@PathVariable Integer teacherId, @PathVariable Integer studentId) {
+        return teacherService.getMyStudent(teacherId, studentId);
     }
 
-    @DeleteMapping("/deleteTeacher/{teacherId}")
-    public String deleteTeacher(@PathVariable int teacherId) {
-        return tserv.deleteTeacher(teacherId);
+    @PostMapping("/postStudents")
+    public StudentEntity posttudent(@PathVariable int teacherId, @RequestBody StudentEntity body) {
+        return teacherService.postStudent(teacherId, body);
+    }
+
+    @PutMapping("/putStudents/{studentId}")
+    public StudentEntity putStudent(@PathVariable Integer teacherId, @PathVariable Integer studentId,
+                                        @RequestBody StudentEntity body) {
+        return teacherService.putStudent(teacherId, studentId, body);
     }
 }
+
