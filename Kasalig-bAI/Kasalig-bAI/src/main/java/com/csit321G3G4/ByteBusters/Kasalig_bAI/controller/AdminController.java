@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.StudentEntity;
+import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.TeacherEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.service.AdminService;
 import java.util.List;
 
@@ -16,6 +17,36 @@ public class AdminController {
     @Autowired
     private AdminService adminService;
 
+    // ============================== TEACHERS ==============================
+
+    @GetMapping("/getTeachers")
+    public List<TeacherEntity> getAllTeachers() {
+        return adminService.getAllTeachers();
+    }
+
+    @GetMapping("/getTeachers/{teacherId}")
+    public TeacherEntity getTeacher(@PathVariable int teacherId) {
+        return adminService.getTeacher(teacherId);
+    }
+
+    @PostMapping("/postTeachers")
+    @ResponseStatus(HttpStatus.CREATED)
+    public TeacherEntity postTeacher(@RequestBody TeacherEntity body) {
+        return adminService.postTeacher(body);
+    }
+
+    @PutMapping("/putTeacher/{teacherId}")
+    public TeacherEntity putTeacher(@PathVariable int teacherId, @RequestBody TeacherEntity body) {
+        return adminService.putTeacher(teacherId, body);
+    }
+
+    @DeleteMapping("/deleteTeachers/{teacherId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteTeacher(@PathVariable int teacherId) {
+        adminService.deleteTeacher(teacherId);
+    }
+
+    // ============================== STUDENTS ==============================
 
     @GetMapping("/getStudents")
     public List<StudentEntity> getAllStudents() {
@@ -27,7 +58,7 @@ public class AdminController {
         return adminService.getStudent(studentId);
     }
 
-    @PostMapping("/postStudents")
+    @PostMapping("/postStudent")
     @ResponseStatus(HttpStatus.CREATED)
     public StudentEntity postStudent(@RequestBody StudentEntity body) {
         return adminService.postStudent(body);
@@ -40,8 +71,7 @@ public class AdminController {
 
     @DeleteMapping("/deleteStudents/{studentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public StudentEntity deleteStudent(@PathVariable int studentId) {
-       return  adminService.deleteStudent(studentId);
+    public void deleteStudent(@PathVariable int studentId) {
+        adminService.deleteStudent(studentId);
     }
 }
-

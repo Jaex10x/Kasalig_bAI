@@ -12,7 +12,7 @@ public class StudentEntity {
     private int studentId;
     private String fullName;
     private String email;
-    private int yearLevel;
+    private Integer yearLevel;
     @ManyToOne
     @JoinColumn(name = "teacher_id")
     private TeacherEntity teacher;
@@ -32,8 +32,8 @@ public class StudentEntity {
         this.teacher = teacher;
     }
 
-    public int getstudentId() { return studentId; }
-    public void setId(int studentId) { this.studentId = studentId; }
+    public int getStudentId() { return studentId; }
+    public void setStudentId(int studentId) { this.studentId = studentId; }
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
     public String getEmail() { return email; }
