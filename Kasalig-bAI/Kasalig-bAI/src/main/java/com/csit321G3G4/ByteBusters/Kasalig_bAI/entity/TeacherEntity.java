@@ -1,5 +1,6 @@
 package com.csit321G3G4.ByteBusters.Kasalig_bAI.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
 @Entity
@@ -11,10 +12,15 @@ public class TeacherEntity {
     private int teacherId;
     private String firstName;
     private String lastName;
-    private String email;
-    private String password;
+
     private String department;
     private String school;
+
+    @Column(unique = true)
+    private String email;
+
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String password;
 
     public TeacherEntity() {}
 

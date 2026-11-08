@@ -15,6 +15,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<String> handleAuthException(AuthException ex){
+        return
+        ResponseEntity.status(ex.getStatus()).body(ex.getMessage());
+    }
+    
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<String> handleBadData(DataIntegrityViolationException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
