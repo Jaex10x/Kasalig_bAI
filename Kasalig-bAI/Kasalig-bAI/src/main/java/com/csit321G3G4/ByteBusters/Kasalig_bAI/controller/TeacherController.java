@@ -8,7 +8,6 @@ import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.TeacherEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.service.TeacherService;
 import java.util.List;
 
-/** TEACHER: read own account; Create, Read, Update her own students. */
 @RestController
 @RequestMapping("/api/teacher")
 public class TeacherController {
@@ -31,7 +30,7 @@ public class TeacherController {
         return teacherService.getAllStudents();
     }
 
-    @GetMapping("/students/{studentId}")
+    @GetMapping("/getStudents/{studentId}")
     public StudentEntity getMyStudent(@PathVariable Integer teacherId, @PathVariable Integer studentId) {
         return teacherService.getMyStudent(teacherId, studentId);
     }

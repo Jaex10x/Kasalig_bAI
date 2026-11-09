@@ -95,9 +95,8 @@ public class AdminService {
         return studentRepository.save(student);
     }
 
-    @Transactional
-    public StudentEntity putStudent(int id, StudentEntity body) {
-        StudentEntity student = findStudent(id);
+    public StudentEntity putStudent(int studentId, StudentEntity body) {
+        StudentEntity student = findStudent(studentId);
         if (!student.getEmail().equalsIgnoreCase(body.getEmail())
                 && studentRepository.existsByEmailIgnoreCase(body.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
@@ -119,9 +118,9 @@ public class AdminService {
 
     //======== Helpers =========//
 
-    private StudentEntity findStudent(int id) {
-        return studentRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student " + id + " not found"));
+    private StudentEntity findStudent(int studentId) {
+        return studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student " + studentId + " not found"));
     }
 
     
