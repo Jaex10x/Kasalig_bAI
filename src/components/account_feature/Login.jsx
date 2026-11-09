@@ -26,10 +26,8 @@ const ROLE_CONFIG = {
   teacher: {
     badge: 'Teacher Portal',
     title: 'Teacher sign in',
-    greeting: 'Welcome, teacher! Your class is waiting.',
     idLabel: 'Institutional email',
     idPlaceholder: 'teacher@cit.edu',
-    endpoint: AUTH_ENDPOINTS.teacherLogin,
     footerLinks: [
       { label: 'About', page: 'landing', href: '#about' },
       { label: 'Student login', page: 'student-login' },
@@ -52,26 +50,18 @@ function validate(form, config) {
   return errors;
 }
 
-/** Decide what the capybara mascot does, highest priority first. */
-function getCompanionState({ submitting, success, passwordFocused, authFailed, serverError, errors, greeting }) {
-  if (submitting) return { mood: 'thinking', message: 'Hmm, let me check that…' };
-  if (success) return { mood: 'happy', message: 'Yay! Welcome back!' };
-  if (passwordFocused) return { mood: 'eyes-closed', message: 'I will close my eyes! 🙈' };
-  if (authFailed) return { mood: 'sad', message: 'Oops! Your password is incorrect. Try again!' };
-  if (serverError) return { mood: 'sad', message: "Uh-oh, I can't reach the server right now." };
-  if (errors.password) return { mood: 'sad', message: "Don't forget your password!" };
-  return { mood: 'idle', message: greeting };
-}
-
 /**
- * Login page for students and teachers.
+ * Login page for students and teachers (mock auth).
  *
  * Props:
  *  - role: 'student' (default) | 'teacher'
- *  - onNavigate(page): optional; used for sign-up, forgot-password and footer links.
- *  - onLogin(user, role): optional; called with the authenticated user returned by the API.
+ *  - onSubmit({ email, password, role }): returns (or resolves to) { ok, user?, error? }.
+ *    This is the swap point for the real API call later.
+ *  - onLogin(user, role): called after a successful login.
+ *  - onNavigate(page): used for sign-up, forgot-password and footer links.
+ *  - flash: optional { type: 'success' | 'error', message } shown above the form.
  */
-export default function Login({ role = 'student', onNavigate, onLogin }) {
+export default function Login({ role = 'student', onSubmit, onLogin, onNavigate, flash }) {
   const config = ROLE_CONFIG[role] ?? ROLE_CONFIG.student;
   const idPrefix = `${role}-login`;
 

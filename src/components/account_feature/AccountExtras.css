@@ -1,0 +1,89 @@
+/* Additions for Edit Account, Forgot Password and the dashboard placeholder.
+   Reuses the --kb-* tokens defined on .kb-auth-page in AuthForm.css. */
+
+.kb-auth-intro {
+  margin: 0 0 16px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--kb-muted);
+}
+
+.kb-auth-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.kb-auth-actions .kb-auth-submit {
+  flex: 1;
+  margin-top: 0;
+}
+
+.kb-auth-secondary {
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--kb-brown-soft);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--kb-brown);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.kb-auth-secondary:hover:not(:disabled) {
+  background: #f6ead8;
+  border-color: var(--kb-brown);
+}
+
+.kb-auth-secondary:focus-visible {
+  outline: 2px solid var(--kb-navy);
+  outline-offset: 2px;
+}
+
+.kb-auth-secondary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Dashboard placeholder (rendered inside .kb-auth-page for tokens + centering) */
+.kb-dash-card {
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+}
+
+.kb-dash-title {
+  margin: 0 0 6px;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--kb-navy);
+  letter-spacing: -0.3px;
+}
+
+.kb-dash-sub {
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: var(--kb-muted);
+}
+
+.kb-dash-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kb-dash-stack .kb-auth-submit,
+.kb-dash-stack .kb-auth-secondary {
+  width: 100%;
+  margin-top: 0;
+}
+
+.kb-dash-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
