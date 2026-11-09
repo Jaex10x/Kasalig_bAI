@@ -1,45 +1,31 @@
-  import React, { useState } from 'react';
+import { useState } from 'react';
 import LandingPage from './pages/LandingPage';
-import StudentLogin from './pages/StudentLogin';
-import TeacherLogin from './pages/TeacherLogin';
+import { StudentLogin, TeacherLogin } from './components/account_feature/Login';
+import Registration from './components/account_feature/Registration';
+
+// Aliases so generic triggers (e.g. the navbar "Login" button) land on a real page.
+const PAGE_ALIASES = {
+  login: 'student-login',
+};
 
 function App() {
   const [currentPage, setCurrentPage] = useState('landing');
 
   const handleNavigate = (page) => {
-    setCurrentPage(page);
+    setCurrentPage(PAGE_ALIASES[page] ?? page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  if (currentPage === 'student-login') {
-    return (
-      <div style={{ padding: '24px', textAlign: 'center' }}>
-        <button 
-          onClick={() => handleNavigate('landing')}
-          style={{ marginBottom: '16px', padding: '8px 16px', cursor: 'pointer' }}
-        >
-          ← Back to Landing Page
-        </button>
-        <StudentLogin onNavigate={handleNavigate} />
-      </div>
-    );
+  switch (currentPage) {
+    case 'student-login':
+      return <StudentLogin onNavigate={handleNavigate} />;
+    case 'teacher-login':
+      return <TeacherLogin onNavigate={handleNavigate} />;
+    case 'register':
+      return <Registration onNavigate={handleNavigate} />;
+    default:
+      return <LandingPage onNavigate={handleNavigate} />;
   }
-
-  if (currentPage === 'teacher-login') {
-    return (
-      <div style={{ padding: '24px', textAlign: 'center' }}>
-        <button 
-          onClick={() => handleNavigate('landing')}
-          style={{ marginBottom: '16px', padding: '8px 16px', cursor: 'pointer' }}
-        >
-          ← Back to Landing Page
-        </button>
-        <TeacherLogin onNavigate={handleNavigate} />
-      </div>
-    );
-  }
-
-  return <LandingPage onNavigate={handleNavigate} />;
 }
 
 export default App;

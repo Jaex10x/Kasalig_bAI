@@ -9,7 +9,6 @@ import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.TeacherEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.service.AdminService;
 import java.util.List;
 
-/** ADMIN: read own account; Create, Read, Update, Delete students. */
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
@@ -17,7 +16,7 @@ public class AdminController {
     @Autowired
     private AdminService adminService;
 
-    // ============================== TEACHERS ==============================
+    // ============================== TEACHERS ==============================//
 
     @GetMapping("/getTeachers")
     public List<TeacherEntity> getAllTeachers() {
@@ -59,7 +58,6 @@ public class AdminController {
     }
 
     @PostMapping("/postStudent")
-    @ResponseStatus(HttpStatus.CREATED)
     public StudentEntity postStudent(@RequestBody StudentEntity body) {
         return adminService.postStudent(body);
     }
@@ -70,7 +68,6 @@ public class AdminController {
     }
 
     @DeleteMapping("/deleteStudents/{studentId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteStudent(@PathVariable int studentId) {
         adminService.deleteStudent(studentId);
     }
