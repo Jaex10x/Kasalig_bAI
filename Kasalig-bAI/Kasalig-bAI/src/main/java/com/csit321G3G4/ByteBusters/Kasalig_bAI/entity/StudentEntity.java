@@ -16,7 +16,6 @@ public class StudentEntity {
     @ManyToOne
     @JoinColumn(name = "teacher_id")
     private TeacherEntity teacher;
-    private String username;
 
     @Transient
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
@@ -42,8 +41,6 @@ public class StudentEntity {
     public void setYearLevel(Integer yearLevel) { this.yearLevel = yearLevel; }
     public TeacherEntity getTeacher() { return teacher; }
     public void setTeacher(TeacherEntity teacher) { this.teacher = teacher; }
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
 }
