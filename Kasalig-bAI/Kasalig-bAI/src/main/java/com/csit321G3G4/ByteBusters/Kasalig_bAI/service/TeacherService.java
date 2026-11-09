@@ -1,48 +1,84 @@
 package com.csit321G3G4.ByteBusters.Kasalig_bAI.service;
 
-import java.util.List;
-import java.util.NoSuchElementException;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.StudentEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.TeacherEntity;
+import com.csit321G3G4.ByteBusters.Kasalig_bAI.repository.StudentRepository;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.repository.TeacherRepository;
-import jakarta.persistence.EntityNotFoundException;
+
+import java.util.List;
 
 @Service
 public class TeacherService {
 
     @Autowired
-    private TeacherRepository trepo;
+    private StudentRepository studentRepository;
 
-    public TeacherEntity postTeacher(TeacherEntity teacher) {
-        return trepo.save(teacher);
+    @Autowired
+    private TeacherRepository teacherRepository;
+
+    public TeacherEntity getMyAccount(Integer teacherId) {
+        return findTeacher(teacherId);
     }
 
-    public List<TeacherEntity> getAllTeachers() {
-        return trepo.findAll();
+
+    public List<StudentEntity> getMyStudents(int teacherId) {
+        findTeacher(teacherId); 
+        return studentRepository.findByTeacherTeacherId(teacherId);
     }
 
-    public TeacherEntity getTeacherById(int id) {
-        return trepo.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Teacher " + id + " does not exist."));
+    public StudentEntity getMyStudent(Integer teacherId, Integer studentId) {
+        return findMyStudent(teacherId, studentId);
     }
 
-    public TeacherEntity updateTeacher(int teacherId, TeacherEntity newDetails) {
-         TeacherEntity teacher = trepo.findById(teacherId).orElseThrow(() -> new EntityNotFoundException("Teacher does not exist!"));
-        teacher.setFirstName(newDetails.getFirstName());
-        teacher.setLastName(newDetails.getLastName());
-        teacher.setEmail(newDetails.getEmail());
-        teacher.setPassword(newDetails.getPassword());
-        teacher.setDepartment(newDetails.getDepartment());
-        teacher.setSchool(newDetails.getSchool());
-        return trepo.save(teacher);
-    }
 
-    public String deleteTeacher(int id) {
-        if (!trepo.existsById(id)) {
-            throw new NoSuchElementException("Teacher " + id + " does not exist.");
+    public StudentEntity postStudent(int teacherId, StudentEntity body) {
+        if (studentRepository.existsByEmailIgnoreCase(body.getEmail())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
         }
-        trepo.deleteById(id);
-        return "Teacher with ID " + id + " has been successfully deleted.";
+        StudentEntity student = new StudentEntity(body.getFullName(), body.getEmail(), body.getYearLevel(),
+                findTeacher(teacherId));
+        return studentRepository.save(student);
+    }
+
+
+    
+    public StudentEntity putStudent(int teacherId, int studentId, StudentEntity body) {
+        StudentEntity student = findMyStudent(teacherId, studentId);
+        if (!student.getEmail().equalsIgnoreCase(body.getEmail())
+                && studentRepository.existsByEmailIgnoreCase(body.getEmail())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
+        }
+        student.setFullName(body.getFullName());
+        student.setEmail(body.getEmail());
+        student.setYearLevel(body.getYearLevel());
+        return studentRepository.save(student);
+    }
+
+
+    private TeacherEntity findTeacher(int teacherId) {
+        return teacherRepository.findById(teacherId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Teacher " + teacherId + " not found"));
+    }
+
+    private StudentEntity findMyStudent(int teacherId, int studentId) {
+        return studentRepository.findByStudentIdAndTeacherTeacherId(studentId, teacherId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student " + studentId + " not found"));
+    }
+
+
+    public TeacherEntity postTeacher(TeacherEntity body) {
+    return teacherRepository.save(body);
+}
+
+
+    public List<StudentEntity> getAllStudents() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getAllStudents'");
     }
 }
+
