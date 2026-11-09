@@ -1,4 +1,3 @@
-import React from 'react';
 import { TrophyIcon, ArrowRightIcon } from './Icons';
 
 export const CtaBannerSection = ({ onGetStarted }) => {

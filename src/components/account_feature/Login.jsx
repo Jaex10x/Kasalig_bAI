@@ -26,6 +26,8 @@ const ROLE_CONFIG = {
   teacher: {
     badge: 'Teacher Portal',
     title: 'Teacher sign in',
+    greeting: 'Welcome, teacher! Ready for class?',
+    endpoint: AUTH_ENDPOINTS.teacherLogin,
     idLabel: 'Institutional email',
     idPlaceholder: 'teacher@cit.edu',
     footerLinks: [
@@ -48,6 +50,19 @@ function validate(form, config) {
   if (idError) errors.email = idError;
   if (!form.password) errors.password = 'Please enter your password.';
   return errors;
+}
+
+/** Picks the capybara's mood + speech bubble from the current form state. */
+function getCompanionState({ submitting, success, passwordFocused, authFailed, serverError, errors, greeting }) {
+  if (submitting) return { mood: 'thinking', message: 'Hmm, let me check that…' };
+  if (success) return { mood: 'happy', message: 'Yay! Welcome back!' };
+  // Checked before passwordFocused: after pressing Enter the cursor is still in the
+  // password box, but we want the pout to show until the user starts typing again.
+  if (authFailed) return { mood: 'pout', message: 'Oopsie! I think your credentials are wrong. 😤' };
+  if (passwordFocused) return { mood: 'eyes-closed', message: 'I will close my eyes! 🙈' };
+  if (serverError) return { mood: 'sad', message: "Uh-oh, I can't reach the server right now." };
+  if (errors.password) return { mood: 'sad', message: "Don't forget your password!" };
+  return { mood: 'idle', message: greeting };
 }
 
 /**
@@ -111,11 +126,27 @@ export default function Login({ role = 'student', onSubmit, onLogin, onNavigate,
     setAuthFailed(false);
     setSuccess(false);
 
+    const credentials = { email: form.email.trim(), password: form.password, role };
+
     try {
-      const user = await postJson(config.endpoint, {
-        email: form.email.trim(),
-        password: form.password,
-      });
+      let user;
+      if (onSubmit) {
+        // Auth from AuthProvider (mock for now): returns { ok, user } | { ok: false, error }.
+        const result = await onSubmit(credentials);
+        if (!result?.ok) {
+          setAuthFailed(true);
+          setServerError(result?.error ?? 'Incorrect email or password.');
+          setForm((prev) => ({ ...prev, password: '' }));
+          return;
+        }
+        user = result.user;
+      } else {
+        // Fallback: call the backend directly.
+        user = await postJson(config.endpoint, {
+          email: credentials.email,
+          password: credentials.password,
+        });
+      }
       setForm(INITIAL_FORM);
       setTouched({});
       setSuccess(true);
@@ -162,6 +193,7 @@ export default function Login({ role = 'student', onSubmit, onLogin, onNavigate,
       companion={<Capybara mood={companion.mood} message={companion.message} />}
     >
       <form className="kb-auth-form" onSubmit={handleSubmit} noValidate>
+        {flash && <FormAlert type={flash.type}>{flash.message}</FormAlert>}
         <FormAlert type="error">{serverError}</FormAlert>
 
         <TextField

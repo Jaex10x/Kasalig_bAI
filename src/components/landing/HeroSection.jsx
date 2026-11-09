@@ -1,4 +1,3 @@
-import React from 'react';
 import { GamepadIcon, ArrowRightIcon, SparklesIcon } from './Icons';
 import QuizDemo from './QuizDemo';
 

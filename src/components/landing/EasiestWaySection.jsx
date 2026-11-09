@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { GamepadIcon, RocketGraphic, CuteCreatureGraphic } from './Icons';
 
 export const EasiestWaySection = ({ onStartLearning }) => {

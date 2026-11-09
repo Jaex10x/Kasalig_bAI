@@ -64,6 +64,15 @@
   color: #a5301f;
 }
 
+.kb-capy[data-mood='pout'] .kb-capy-bubble,
+.kb-capy[data-mood='pout'] .kb-capy-bubble::after {
+  border-color: #f3c7a6;
+}
+.kb-capy[data-mood='pout'] .kb-capy-bubble {
+  background: #fff4ea;
+  color: #a2481a;
+}
+
 .kb-capy[data-mood='happy'] .kb-capy-bubble,
 .kb-capy[data-mood='happy'] .kb-capy-bubble::after {
   border-color: #bfe0cb;
@@ -80,7 +89,10 @@
 .kb-capy-eyes-open,
 .kb-capy-eyes-closed,
 .kb-capy-eyes-happy,
-.kb-capy-orange {
+.kb-capy-orange,
+.kb-capy-blush,
+.kb-capy-huff,
+.kb-capy-mouth-pout {
   transform-box: fill-box;
   transform-origin: center;
 }
@@ -94,6 +106,7 @@
 .kb-capy-eyes-closed,
 .kb-capy-eyes-happy,
 .kb-capy-sad-bits,
+.kb-capy-pout-bits,
 .kb-capy-mouth,
 .kb-capy-blush {
   transition: opacity 0.22s ease, transform 0.22s ease;
@@ -103,6 +116,8 @@
 .kb-capy-eyes-closed,
 .kb-capy-eyes-happy,
 .kb-capy-sad-bits,
+.kb-capy-pout-bits,
+.kb-capy-mouth-pout,
 .kb-capy-mouth-sad,
 .kb-capy-mouth-flat,
 .kb-capy-mouth-happy {
@@ -138,6 +153,19 @@
 .kb-capy[data-mood='sad'] .kb-capy-head { animation: kb-capy-shake 0.5s ease-in-out; }
 .kb-capy[data-mood='sad'] .kb-capy-tear { animation: kb-capy-tear 1.6s ease-in infinite 0.4s; }
 
+/* Pout (wrong credentials): puffed cheeks, furrowed brows, side-eye, "hmph" */
+.kb-capy[data-mood='pout'] .kb-capy-pout-bits,
+.kb-capy[data-mood='pout'] .kb-capy-mouth-pout { opacity: 1; }
+.kb-capy[data-mood='pout'] .kb-capy-mouth-smile { opacity: 0; }
+.kb-capy[data-mood='pout'] .kb-capy-mouth-pout { animation: kb-capy-pucker 1.4s ease-in-out infinite 0.5s; }
+.kb-capy[data-mood='pout'] .kb-capy-blush {
+  opacity: 1;
+  transform: scale(1.45);
+}
+.kb-capy[data-mood='pout'] .kb-capy-eye { transform: translate(-3px, 1px) scaleY(0.8); }
+.kb-capy[data-mood='pout'] .kb-capy-head { animation: kb-capy-hmph 0.6s ease-out forwards; }
+.kb-capy[data-mood='pout'] .kb-capy-huff { animation: kb-capy-huff 1.4s ease-out infinite 0.5s; }
+
 /* Thinking (submitting) */
 .kb-capy[data-mood='thinking'] .kb-capy-mouth-flat { opacity: 1; }
 .kb-capy[data-mood='thinking'] .kb-capy-mouth-smile { opacity: 0; }
@@ -171,6 +199,22 @@
   40%      { transform: rotate(6deg); }
   60%      { transform: rotate(-4deg); }
   80%      { transform: rotate(3deg); }
+}
+/* Turns away with a little "hmph" bounce, then stays tilted. */
+@keyframes kb-capy-hmph {
+  0%   { transform: rotate(0) translateY(0); }
+  35%  { transform: rotate(7deg) translateY(-4px); }
+  60%  { transform: rotate(4deg) translateY(1px); }
+  100% { transform: rotate(5deg) translateY(0); }
+}
+@keyframes kb-capy-pucker {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.15, 1.2); }
+}
+@keyframes kb-capy-huff {
+  0%   { opacity: 0; transform: translateX(0); }
+  25%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(8px); }
 }
 @keyframes kb-capy-tear {
   0%   { opacity: 0; transform: translateY(0); }

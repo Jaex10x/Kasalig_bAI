@@ -1,4 +1,3 @@
-import React from 'react';
 import { CompassIcon, SearchIcon, BarChartIcon, PackageIcon } from './Icons';
 
 export const ProblemSection = () => {
