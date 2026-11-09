@@ -7,6 +7,7 @@ import {
   postJson,
 } from './authApi';
 import { AuthLayout, FormAlert, NavLink, PasswordField, TextField } from './AuthShared';
+import Capybara from '../capybaraStyle/Capybara';
 
 const INITIAL_FORM = {
   fullName: '',
@@ -49,20 +50,77 @@ function validate(form) {
   return errors;
 }
 
+const FIELD_ORDER = ['fullName', 'email', 'course', 'password'];
+
+/** What the capybara says while each field is being filled in. */
+function fieldHint(field, firstName) {
+  switch (field) {
+    case 'fullName':
+      return "What's your full name? Like “Juan Dela Cruz”.";
+    case 'email':
+      return firstName
+        ? `Nice to meet you, ${firstName}! Now your school email or student ID.`
+        : 'Now your institutional email or student ID.';
+    case 'course':
+      return 'Which course are you taking? e.g. BS Information Technology.';
+    case 'password':
+      return `Make a password with at least ${MIN_PASSWORD_LENGTH} characters. I won't peek! 🙈`;
+    default:
+      return '';
+  }
+}
+
+/** Picks the capybara's mood + speech bubble from the current form state. */
+function getCompanionState({ form, errors, focusedField, submitting, success, serverError, attempted }) {
+  const firstName = form.fullName.trim().split(/\s+/)[0];
+
+  if (submitting) return { mood: 'thinking', message: 'Creating your account…' };
+  if (success) return { mood: 'happy', message: 'Yay! Your account is ready! 🎉' };
+  if (serverError) return { mood: 'sad', message: 'Oh no, something went wrong. Please try again.' };
+
+  // Eyes stay closed the whole time the password is being typed.
+  if (focusedField === 'password') {
+    return { mood: 'eyes-closed', message: errors.password ?? fieldHint('password') };
+  }
+  if (focusedField) {
+    if (errors[focusedField]) return { mood: 'sad', message: errors[focusedField] };
+    return { mood: 'idle', message: fieldHint(focusedField, firstName) };
+  }
+
+  const firstError = FIELD_ORDER.find((name) => errors[name]);
+  if (firstError) {
+    return {
+      mood: 'sad',
+      message: attempted ? 'A few fields need fixing. Check the red ones!' : errors[firstError],
+    };
+  }
+
+  const nextEmpty = FIELD_ORDER.find((name) => !form[name].trim());
+  if (!nextEmpty) return { mood: 'happy', message: 'All set! Tap “Create account”.' };
+  if (nextEmpty === 'fullName') {
+    return { mood: 'idle', message: "Hi! Let's create your account. Start with your full name." };
+  }
+  return { mood: 'idle', message: fieldHint(nextEmpty, firstName) };
+}
+
 /**
  * Student registration page.
  *
  * Props:
+ *  - onSubmit({ fullName, email, course, password }): optional; returns (or resolves to)
+ *    { ok, user?, error? }. Without it, the backend is called directly.
  *  - onNavigate(page): optional; used for "Log in", "About" and "Teacher login" links.
  *  - onRegistered(student): optional; called with the created student after a successful sign-up.
  */
-export default function Registration({ onNavigate, onRegistered }) {
+export default function Registration({ onSubmit, onNavigate, onRegistered }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
+  const [attempted, setAttempted] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -75,8 +133,11 @@ export default function Registration({ onNavigate, onRegistered }) {
     if (success) setSuccess(false);
   };
 
+  const handleFocus = (e) => setFocusedField(e.target.name);
+
   const handleBlur = (e) => {
     const { name } = e.target;
+    setFocusedField((current) => (current === name ? null : current));
     setTouched((prev) => ({ ...prev, [name]: true }));
     setErrors((prev) => ({ ...prev, [name]: validate(form)[name] }));
   };
@@ -88,19 +149,34 @@ export default function Registration({ onNavigate, onRegistered }) {
     const validationErrors = validate(form);
     setErrors(validationErrors);
     setTouched({ fullName: true, email: true, course: true, password: true });
+    setAttempted(true);
     if (Object.keys(validationErrors).length > 0) return;
 
     setSubmitting(true);
     setServerError('');
 
+    const payload = {
+      fullName: form.fullName.trim(),
+      email: form.email.trim(),
+      course: form.course.trim(),
+      password: form.password,
+    };
+
     try {
-      const student = await postJson(AUTH_ENDPOINTS.registerStudent, {
-        fullName: form.fullName.trim(),
-        email: form.email.trim(),
-        course: form.course.trim(),
-        password: form.password,
-      });
+      let student;
+      if (onSubmit) {
+        // Auth from AuthProvider (mock for now): returns { ok, user } | { ok: false, error }.
+        const result = await onSubmit(payload);
+        if (!result?.ok) {
+          setServerError(result?.error ?? 'Could not create your account.');
+          return;
+        }
+        student = result.user;
+      } else {
+        student = await postJson(AUTH_ENDPOINTS.registerStudent, payload);
+      }
       setSuccess(true);
+      setAttempted(false);
       setForm(INITIAL_FORM);
       setTouched({});
       onRegistered?.(student);
@@ -116,9 +192,20 @@ export default function Registration({ onNavigate, onRegistered }) {
     name,
     value: form[name],
     onChange: handleChange,
+    onFocus: handleFocus,
     onBlur: handleBlur,
     disabled: submitting,
     error: errors[name],
+  });
+
+  const companion = getCompanionState({
+    form,
+    errors,
+    focusedField,
+    submitting,
+    success,
+    serverError,
+    attempted,
   });
 
   return (
@@ -127,6 +214,7 @@ export default function Registration({ onNavigate, onRegistered }) {
       title="Create your account"
       footerLinks={FOOTER_LINKS}
       onNavigate={onNavigate}
+      companion={<Capybara mood={companion.mood} message={companion.message} />}
     >
       <form className="kb-auth-form" onSubmit={handleSubmit} noValidate>
         <FormAlert type="success">{success && 'Account created! You can now log in.'}</FormAlert>

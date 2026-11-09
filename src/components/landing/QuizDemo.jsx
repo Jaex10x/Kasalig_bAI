@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   CloseIcon, 
   ChevronDownIcon, 
@@ -19,7 +19,6 @@ export const QuizDemo = () => {
   const [showSparkles, setShowSparkles] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [showHint, setShowHint] = useState(false);
-  const manualTimerRef = useRef(null);
 
   const options = [
     { id: 'shorten', label: 'shorten', isCorrect: false },

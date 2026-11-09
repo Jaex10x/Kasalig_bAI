@@ -1,4 +1,3 @@
-import React from 'react';
 import { CheckIcon, ArrowRightIcon } from './Icons';
 
 export const ClassroomSection = ({ onStudentAction, onTeacherAction }) => {

@@ -7,7 +7,7 @@ import './Capybara.css';
  * accessibly by the form itself (inline errors / alerts).
  *
  * Props:
- *  - mood: 'idle' | 'eyes-closed' | 'sad' | 'happy' | 'thinking'
+ *  - mood: 'idle' | 'eyes-closed' | 'sad' | 'pout' | 'happy' | 'thinking'
  *  - message: text shown in the speech bubble
  */
 export default function Capybara({ mood = 'idle', message }) {
@@ -90,11 +90,23 @@ export default function Capybara({ mood = 'idle', message }) {
             <path className="kb-capy-tear" d="M76 88 q-5 8 0 11 q5 -3 0 -11z" fill="#7cc4f0" />
           </g>
 
+          {/* pout bits: furrowed brows + "hmph" puff of air */}
+          <g className="kb-capy-pout-bits">
+            <path d="M72 63 L90 69" stroke="#6b4022" strokeWidth="3.2" strokeLinecap="round" />
+            <path d="M148 63 L130 69" stroke="#6b4022" strokeWidth="3.2" strokeLinecap="round" />
+            <g className="kb-capy-huff" fill="none" stroke="#c9a284" strokeWidth="2.4" strokeLinecap="round">
+              <path d="M160 116 q8 -2 13 -7" />
+              <path d="M162 124 q9 0 15 -3" />
+            </g>
+          </g>
+
           {/* mouths */}
           <path className="kb-capy-mouth kb-capy-mouth-smile" d="M101 117 q9 7 18 0" fill="none" stroke="#3b2416" strokeWidth="2.6" strokeLinecap="round" />
           <path className="kb-capy-mouth kb-capy-mouth-sad" d="M101 122 q9 -7 18 0" fill="none" stroke="#3b2416" strokeWidth="2.6" strokeLinecap="round" />
           <path className="kb-capy-mouth kb-capy-mouth-flat" d="M103 119 h14" fill="none" stroke="#3b2416" strokeWidth="2.6" strokeLinecap="round" />
           <path className="kb-capy-mouth kb-capy-mouth-happy" d="M99 114 q11 13 22 0z" fill="#6b2f1a" />
+          {/* pouty pushed-out lips */}
+          <path className="kb-capy-mouth kb-capy-mouth-pout" d="M102 121 q8 -8 16 0 q-8 6 -16 0z" fill="#6b2f1a" />
         </g>
       </svg>
     </figure>

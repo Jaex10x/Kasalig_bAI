@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { HeartIcon } from './Icons';
 
 export const FeedbacksSection = () => {
