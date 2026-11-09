@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import { EMAIL_PATTERN, STUDENT_ID_PATTERN } from './authApi';
+import { AUTH_ENDPOINTS, EMAIL_PATTERN, STUDENT_ID_PATTERN, postJson } from './authApi';
 import { AuthLayout, FormAlert, NavLink, PasswordField, TextField } from './AuthShared';
+import Capybara from '../capybaraStyle/Capybara';
 
 const ROLE_CONFIG = {
   student: {
     badge: 'Student Portal',
     title: 'Welcome back',
+    greeting: 'Hi there! Ready to learn today?',
     idLabel: 'Institutional email / Student ID',
     idPlaceholder: 'Email address / ID number',
+    endpoint: AUTH_ENDPOINTS.studentLogin,
     footerLinks: [
       { label: 'About', page: 'landing', href: '#about' },
       { label: 'Teacher login', page: 'teacher-login' },
@@ -67,6 +70,9 @@ export default function Login({ role = 'student', onSubmit, onLogin, onNavigate,
   const [touched, setTouched] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
+  const [authFailed, setAuthFailed] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -76,10 +82,17 @@ export default function Login({ role = 'student', onSubmit, onLogin, onNavigate,
       setErrors((prev) => ({ ...prev, [name]: validate(next, config)[name] }));
     }
     if (serverError) setServerError('');
+    if (authFailed) setAuthFailed(false);
+    if (success) setSuccess(false);
+  };
+
+  const handleFocus = (e) => {
+    if (e.target.name === 'password') setPasswordFocused(true);
   };
 
   const handleBlur = (e) => {
     const { name } = e.target;
+    if (name === 'password') setPasswordFocused(false);
     setTouched((prev) => ({ ...prev, [name]: true }));
     setErrors((prev) => ({ ...prev, [name]: validate(form, config)[name] }));
   };
@@ -95,23 +108,23 @@ export default function Login({ role = 'student', onSubmit, onLogin, onNavigate,
 
     setSubmitting(true);
     setServerError('');
+    setAuthFailed(false);
+    setSuccess(false);
 
     try {
-      const result = await onSubmit({
+      const user = await postJson(config.endpoint, {
         email: form.email.trim(),
         password: form.password,
-        role,
       });
-      if (!result?.ok) {
-        setServerError(result?.error ?? 'Incorrect email or password.');
-        setForm((prev) => ({ ...prev, password: '' }));
-        return;
-      }
       setForm(INITIAL_FORM);
       setTouched({});
-      onLogin?.(result.user, role);
+      setSuccess(true);
+      onLogin?.(user, role);
     } catch (err) {
-      setServerError(err.message || 'Something went wrong. Please try again.');
+      const isAuthError = err.status === 401 || err.status === 403;
+      setAuthFailed(isAuthError);
+      // Never reveal which credential was wrong.
+      setServerError(isAuthError ? 'Incorrect email or password.' : err.message);
       setForm((prev) => ({ ...prev, password: '' }));
     } finally {
       setSubmitting(false);
@@ -123,9 +136,20 @@ export default function Login({ role = 'student', onSubmit, onLogin, onNavigate,
     name,
     value: form[name],
     onChange: handleChange,
+    onFocus: handleFocus,
     onBlur: handleBlur,
     disabled: submitting,
     error: errors[name],
+  });
+
+  const companion = getCompanionState({
+    submitting,
+    success,
+    passwordFocused,
+    authFailed,
+    serverError,
+    errors,
+    greeting: config.greeting,
   });
 
   return (
@@ -135,9 +159,9 @@ export default function Login({ role = 'student', onSubmit, onLogin, onNavigate,
       title={config.title}
       footerLinks={config.footerLinks}
       onNavigate={onNavigate}
+      companion={<Capybara mood={companion.mood} message={companion.message} />}
     >
       <form className="kb-auth-form" onSubmit={handleSubmit} noValidate>
-        {flash && <FormAlert type={flash.type}>{flash.message}</FormAlert>}
         <FormAlert type="error">{serverError}</FormAlert>
 
         <TextField
@@ -158,21 +182,22 @@ export default function Login({ role = 'student', onSubmit, onLogin, onNavigate,
           {submitting ? 'Logging in…' : 'Login'}
         </button>
 
-        <p className="kb-auth-switch">
-          Forgot password?{' '}
-          <NavLink page="forgot-password" onNavigate={onNavigate}>Click here</NavLink>
-        </p>
-
         {role === 'teacher' ? (
           <p className="kb-auth-note">
             New teacher? Register with institutional credentials. Accounts are verified by
             your school administrator.
           </p>
         ) : (
-          <p className="kb-auth-switch">
-            New here?{' '}
-            <NavLink page="register" onNavigate={onNavigate}>Sign up</NavLink>
-          </p>
+          <>
+            <p className="kb-auth-switch">
+              Forgot password?{' '}
+              <NavLink page="forgot-password" onNavigate={onNavigate}>Click here</NavLink>
+            </p>
+            <p className="kb-auth-switch">
+              New here?{' '}
+              <NavLink page="register" onNavigate={onNavigate}>Sign up</NavLink>
+            </p>
+          </>
         )}
       </form>
     </AuthLayout>

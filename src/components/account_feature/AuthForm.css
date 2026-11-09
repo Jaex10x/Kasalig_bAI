@@ -1,19 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
-
 /* ==========================================================================
    Account feature (register / login) – scoped with the .kb-auth- prefix
+   Palette mirrors the landing page (src/pages/LandingPage.css).
    ========================================================================== */
 
 .kb-auth-page {
-  --kb-cream: #fdf5e8;
+  --kb-cream: #faf7f2;          /* landing page background */
+  --kb-surface: #ffffff;        /* landing card surface */
+  --kb-input-bg: #fffcf8;
   --kb-brown: #7a4a2b;
-  --kb-brown-soft: #a88a72;
-  --kb-orange: #e8843a;
-  --kb-orange-hover: #d9742b;
-  --kb-navy: #1f2a44;
-  --kb-text: #3b3f4a;
-  --kb-muted: #5f6472;
-  --kb-divider: #ecdfcd;
+  --kb-brown-soft: #a88a72;     /* input border, ≥3:1 on white */
+  --kb-orange: #de7a40;         /* landing accent */
+  --kb-orange-hover: #c2672d;
+  --kb-orange-text: #b35a22;    /* accent for small text, ≥4.5:1 on white */
+  --kb-navy: #152232;
+  --kb-heading: #111827;
+  --kb-text: #1e293b;
+  --kb-muted: #64748b;
+  --kb-divider: #ebd9c8;
+  --kb-shadow: 0 10px 30px -4px rgba(50, 25, 10, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
   --kb-error: #c0392b;
   --kb-success: #2e7d4f;
 
@@ -24,7 +28,7 @@
   padding: 48px 16px;
   box-sizing: border-box;
   background: var(--kb-cream);
-  font-family: 'DM Sans', 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: var(--kb-text);
 }
 
@@ -34,10 +38,31 @@
   box-sizing: border-box;
 }
 
+/* Card + optional companion (mascot) side by side */
+.kb-auth-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  width: 100%;
+  max-width: 760px;
+}
+
 .kb-auth-card {
   width: 100%;
-  max-width: 340px;
-  background: var(--kb-cream);
+  max-width: 380px;
+  padding: 28px 24px 18px;
+  background: var(--kb-surface);
+  border: 1px solid var(--kb-divider);
+  border-radius: 20px;
+  box-shadow: var(--kb-shadow);
+}
+
+@media (max-width: 760px) {
+  .kb-auth-stage {
+    flex-direction: column;
+    gap: 12px;
+  }
 }
 
 /* ---------- Header ---------- */
@@ -103,7 +128,7 @@
 
 /* ---------- Form ---------- */
 .kb-auth-form {
-  padding: 20px 18px 24px;
+  padding: 20px 0 24px;
   border-bottom: 1px solid var(--kb-divider);
 }
 
@@ -125,7 +150,7 @@
   padding: 0 10px;
   border: 1px solid var(--kb-brown-soft);
   border-radius: 6px;
-  background: #fffaf2;
+  background: var(--kb-input-bg);
   font: inherit;
   font-size: 13px;
   color: var(--kb-navy);
@@ -271,7 +296,7 @@
 }
 
 .kb-auth-link {
-  color: var(--kb-orange);
+  color: var(--kb-orange-text);
   font-weight: 500;
   text-decoration: none;
 }
@@ -296,8 +321,8 @@
 }
 
 @media (max-width: 380px) {
-  .kb-auth-form {
-    padding-inline: 4px;
+  .kb-auth-card {
+    padding-inline: 18px;
   }
   .kb-auth-title {
     font-size: 23px;

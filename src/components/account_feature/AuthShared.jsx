@@ -28,35 +28,55 @@ const EyeIcon = ({ open }) => (
 /**
  * Page shell: cream background, brand, portal badge, title, tagline and footer links.
  * footerLinks: [{ label, page, href }]
+ * companion:   optional node (e.g. a mascot) rendered beside the card.
  */
-export function AuthLayout({ badge, badgeVariant = 'student', title, footerLinks = [], onNavigate, children }) {
+export function AuthLayout({
+  badge,
+  badgeVariant = 'student',
+  title,
+  footerLinks = [],
+  onNavigate,
+  companion,
+  children,
+}) {
+  const card = (
+    <section className="kb-auth-card" aria-labelledby="kb-auth-title">
+      <header className="kb-auth-header">
+        <div className="kb-auth-brand">
+          <BrandMark />
+          <span className="kb-auth-brand-name">
+            Kasalig <span className="kb-auth-brand-accent">bAI</span>
+          </span>
+        </div>
+        <span className={`kb-auth-badge is-${badgeVariant}`}>{badge}</span>
+        <h1 id="kb-auth-title" className="kb-auth-title">{title}</h1>
+        <p className="kb-auth-tagline">Understand. Improve. Excel.</p>
+      </header>
+
+      {children}
+
+      {footerLinks.length > 0 && (
+        <footer className="kb-auth-footer">
+          {footerLinks.map(({ label, page, href }) => (
+            <NavLink key={label} page={page} href={href} onNavigate={onNavigate}>
+              {label}
+            </NavLink>
+          ))}
+        </footer>
+      )}
+    </section>
+  );
+
   return (
     <main className="kb-auth-page">
-      <section className="kb-auth-card" aria-labelledby="kb-auth-title">
-        <header className="kb-auth-header">
-          <div className="kb-auth-brand">
-            <BrandMark />
-            <span className="kb-auth-brand-name">
-              Kasalig <span className="kb-auth-brand-accent">bAI</span>
-            </span>
-          </div>
-          <span className={`kb-auth-badge is-${badgeVariant}`}>{badge}</span>
-          <h1 id="kb-auth-title" className="kb-auth-title">{title}</h1>
-          <p className="kb-auth-tagline">Understand. Improve. Excel.</p>
-        </header>
-
-        {children}
-
-        {footerLinks.length > 0 && (
-          <footer className="kb-auth-footer">
-            {footerLinks.map(({ label, page, href }) => (
-              <NavLink key={label} page={page} href={href} onNavigate={onNavigate}>
-                {label}
-              </NavLink>
-            ))}
-          </footer>
-        )}
-      </section>
+      {companion ? (
+        <div className="kb-auth-stage">
+          {companion}
+          {card}
+        </div>
+      ) : (
+        card
+      )}
     </main>
   );
 }

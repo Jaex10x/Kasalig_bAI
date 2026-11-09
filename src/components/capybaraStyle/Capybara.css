@@ -1,0 +1,210 @@
+/* ==========================================================================
+   Capybara mascot – moods are driven by [data-mood] on .kb-capy
+   ========================================================================== */
+
+.kb-capy {
+  margin: 0;
+  width: 240px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+.kb-capy-svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* ---------- Speech bubble ---------- */
+.kb-capy-bubble {
+  position: relative;
+  max-width: 230px;
+  min-height: 44px;
+  margin-bottom: 6px;
+  padding: 11px 16px;
+  background: #ffffff;
+  border: 1px solid #ebd9c8;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px -4px rgba(50, 25, 10, 0.08);
+  color: #1e293b;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.kb-capy-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  background: inherit;
+  border-right: 1px solid #ebd9c8;
+  border-bottom: 1px solid #ebd9c8;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.kb-capy-bubble-text {
+  display: inline-block;
+  animation: kb-capy-pop 0.28s ease-out;
+}
+
+.kb-capy[data-mood='sad'] .kb-capy-bubble,
+.kb-capy[data-mood='sad'] .kb-capy-bubble::after {
+  border-color: #f0c2bb;
+}
+.kb-capy[data-mood='sad'] .kb-capy-bubble {
+  background: #fdf1ef;
+  color: #a5301f;
+}
+
+.kb-capy[data-mood='happy'] .kb-capy-bubble,
+.kb-capy[data-mood='happy'] .kb-capy-bubble::after {
+  border-color: #bfe0cb;
+}
+.kb-capy[data-mood='happy'] .kb-capy-bubble {
+  background: #eef8f1;
+  color: #24663f;
+}
+
+/* ---------- SVG parts: transform from their own centre ---------- */
+.kb-capy-head,
+.kb-capy-body,
+.kb-capy-eye,
+.kb-capy-eyes-open,
+.kb-capy-eyes-closed,
+.kb-capy-eyes-happy,
+.kb-capy-orange {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.kb-capy-head {
+  transform-origin: 50% 90%;
+  transition: transform 0.3s ease;
+}
+
+.kb-capy-eyes-open,
+.kb-capy-eyes-closed,
+.kb-capy-eyes-happy,
+.kb-capy-sad-bits,
+.kb-capy-mouth,
+.kb-capy-blush {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+/* Defaults (idle) */
+.kb-capy-eyes-closed,
+.kb-capy-eyes-happy,
+.kb-capy-sad-bits,
+.kb-capy-mouth-sad,
+.kb-capy-mouth-flat,
+.kb-capy-mouth-happy {
+  opacity: 0;
+}
+.kb-capy-eyes-closed { transform: scaleY(0.4); }
+.kb-capy-blush { opacity: 0.45; }
+
+.kb-capy[data-mood='idle'] .kb-capy-eye {
+  animation: kb-capy-blink 4.5s infinite;
+}
+.kb-capy[data-mood='idle'] .kb-capy-body {
+  animation: kb-capy-breathe 3.2s ease-in-out infinite;
+}
+
+/* Eyes closed (typing password) */
+.kb-capy[data-mood='eyes-closed'] .kb-capy-eyes-open {
+  opacity: 0;
+  transform: scaleY(0.1);
+}
+.kb-capy[data-mood='eyes-closed'] .kb-capy-eyes-closed {
+  opacity: 1;
+  transform: scaleY(1);
+}
+.kb-capy[data-mood='eyes-closed'] .kb-capy-blush { opacity: 0.8; }
+.kb-capy[data-mood='eyes-closed'] .kb-capy-head { transform: rotate(-4deg); }
+
+/* Sad (wrong password / error) */
+.kb-capy[data-mood='sad'] .kb-capy-sad-bits,
+.kb-capy[data-mood='sad'] .kb-capy-mouth-sad { opacity: 1; }
+.kb-capy[data-mood='sad'] .kb-capy-mouth-smile { opacity: 0; }
+.kb-capy[data-mood='sad'] .kb-capy-blush { opacity: 0.2; }
+.kb-capy[data-mood='sad'] .kb-capy-head { animation: kb-capy-shake 0.5s ease-in-out; }
+.kb-capy[data-mood='sad'] .kb-capy-tear { animation: kb-capy-tear 1.6s ease-in infinite 0.4s; }
+
+/* Thinking (submitting) */
+.kb-capy[data-mood='thinking'] .kb-capy-mouth-flat { opacity: 1; }
+.kb-capy[data-mood='thinking'] .kb-capy-mouth-smile { opacity: 0; }
+.kb-capy[data-mood='thinking'] .kb-capy-head { animation: kb-capy-ponder 1.2s ease-in-out infinite; }
+
+/* Happy (logged in) */
+.kb-capy[data-mood='happy'] .kb-capy-eyes-open { opacity: 0; }
+.kb-capy[data-mood='happy'] .kb-capy-eyes-happy,
+.kb-capy[data-mood='happy'] .kb-capy-mouth-happy { opacity: 1; }
+.kb-capy[data-mood='happy'] .kb-capy-mouth-smile { opacity: 0; }
+.kb-capy[data-mood='happy'] .kb-capy-blush { opacity: 0.9; }
+.kb-capy[data-mood='happy'] .kb-capy-svg { animation: kb-capy-hop 0.6s ease-out 2; }
+.kb-capy[data-mood='happy'] .kb-capy-orange { animation: kb-capy-spin 0.9s ease-out; }
+
+/* ---------- Keyframes ---------- */
+@keyframes kb-capy-pop {
+  from { opacity: 0; transform: translateY(4px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes kb-capy-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95%           { transform: scaleY(0.1); }
+}
+@keyframes kb-capy-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.015, 0.985); }
+}
+@keyframes kb-capy-shake {
+  0%, 100% { transform: rotate(0); }
+  20%      { transform: rotate(-7deg); }
+  40%      { transform: rotate(6deg); }
+  60%      { transform: rotate(-4deg); }
+  80%      { transform: rotate(3deg); }
+}
+@keyframes kb-capy-tear {
+  0%   { opacity: 0; transform: translateY(0); }
+  20%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(14px); }
+}
+@keyframes kb-capy-ponder {
+  0%, 100% { transform: rotate(-3deg); }
+  50%      { transform: rotate(3deg); }
+}
+@keyframes kb-capy-hop {
+  0%, 100% { transform: translateY(0); }
+  40%      { transform: translateY(-14px); }
+}
+@keyframes kb-capy-spin {
+  from { transform: rotate(0); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 760px) {
+  .kb-capy {
+    width: 160px;
+  }
+  .kb-capy-bubble {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kb-capy *,
+  .kb-capy *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
