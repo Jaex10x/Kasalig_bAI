@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import {
-  AUTH_ENDPOINTS,
   EMAIL_PATTERN,
   MIN_PASSWORD_LENGTH,
   STUDENT_ID_PATTERN,
-  postJson,
 } from './authApi';
 import { AuthLayout, FormAlert, NavLink, PasswordField, TextField } from './AuthShared';
 
@@ -13,6 +11,7 @@ const INITIAL_FORM = {
   email: '',
   course: '',
   password: '',
+  confirmPassword: '',
 };
 
 const FOOTER_LINKS = [
@@ -46,33 +45,47 @@ function validate(form) {
     errors.password = `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
   }
 
+  if (!form.confirmPassword) {
+    errors.confirmPassword = 'Please confirm your password.';
+  } else if (form.confirmPassword !== form.password) {
+    errors.confirmPassword = 'Passwords do not match.';
+  }
+
   return errors;
 }
 
 /**
- * Student registration page.
+ * Student registration page (mock auth).
  *
  * Props:
- *  - onNavigate(page): optional; used for "Log in", "About" and "Teacher login" links.
- *  - onRegistered(student): optional; called with the created student after a successful sign-up.
+ *  - onSubmit({ fullName, email, course, password }): returns (or resolves to)
+ *    { ok, user?, error? }. This is the swap point for the real API call later.
+ *  - onRegistered(user): called after a successful sign-up.
+ *  - onNavigate(page): used for "Log in", "About" and "Teacher login" links.
  */
-export default function Registration({ onNavigate, onRegistered }) {
+export default function Registration({ onSubmit, onRegistered, onNavigate }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
-  const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     const next = { ...form, [name]: value };
     setForm(next);
-    if (touched[name]) {
-      setErrors((prev) => ({ ...prev, [name]: validate(next)[name] }));
-    }
+
+    const fresh = validate(next);
+    setErrors((prev) => {
+      const updated = { ...prev };
+      if (touched[name]) updated[name] = fresh[name];
+      // Keep "passwords match" in sync when the first password changes.
+      if (name === 'password' && touched.confirmPassword) {
+        updated.confirmPassword = fresh.confirmPassword;
+      }
+      return updated;
+    });
     if (serverError) setServerError('');
-    if (success) setSuccess(false);
   };
 
   const handleBlur = (e) => {
@@ -87,25 +100,34 @@ export default function Registration({ onNavigate, onRegistered }) {
 
     const validationErrors = validate(form);
     setErrors(validationErrors);
-    setTouched({ fullName: true, email: true, course: true, password: true });
+    setTouched({
+      fullName: true,
+      email: true,
+      course: true,
+      password: true,
+      confirmPassword: true,
+    });
     if (Object.keys(validationErrors).length > 0) return;
 
     setSubmitting(true);
     setServerError('');
 
     try {
-      const student = await postJson(AUTH_ENDPOINTS.registerStudent, {
+      const result = await onSubmit({
         fullName: form.fullName.trim(),
         email: form.email.trim(),
         course: form.course.trim(),
         password: form.password,
       });
-      setSuccess(true);
+      if (!result?.ok) {
+        setServerError(result?.error ?? 'Could not create your account.');
+        return;
+      }
       setForm(INITIAL_FORM);
       setTouched({});
-      onRegistered?.(student);
+      onRegistered?.(result.user);
     } catch (err) {
-      setServerError(err.message);
+      setServerError(err.message || 'Something went wrong. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -129,7 +151,6 @@ export default function Registration({ onNavigate, onRegistered }) {
       onNavigate={onNavigate}
     >
       <form className="kb-auth-form" onSubmit={handleSubmit} noValidate>
-        <FormAlert type="success">{success && 'Account created! You can now log in.'}</FormAlert>
         <FormAlert type="error">{serverError}</FormAlert>
 
         <TextField
@@ -158,6 +179,12 @@ export default function Registration({ onNavigate, onRegistered }) {
           {...fieldProps('password')}
           autoComplete="new-password"
           placeholder="At least 8 characters"
+        />
+        <PasswordField
+          {...fieldProps('confirmPassword')}
+          label="Confirm password"
+          autoComplete="new-password"
+          placeholder="Re-enter your password"
         />
 
         <button type="submit" className="kb-auth-submit" disabled={submitting}>

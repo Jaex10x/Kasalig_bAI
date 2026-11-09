@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AUTH_ENDPOINTS, EMAIL_PATTERN, STUDENT_ID_PATTERN, postJson } from './authApi';
+import { EMAIL_PATTERN, STUDENT_ID_PATTERN } from './authApi';
 import { AuthLayout, FormAlert, NavLink, PasswordField, TextField } from './AuthShared';
 
 const ROLE_CONFIG = {
@@ -8,7 +8,6 @@ const ROLE_CONFIG = {
     title: 'Welcome back',
     idLabel: 'Institutional email / Student ID',
     idPlaceholder: 'Email address / ID number',
-    endpoint: AUTH_ENDPOINTS.studentLogin,
     footerLinks: [
       { label: 'About', page: 'landing', href: '#about' },
       { label: 'Teacher login', page: 'teacher-login' },
@@ -26,7 +25,6 @@ const ROLE_CONFIG = {
     title: 'Teacher sign in',
     idLabel: 'Institutional email',
     idPlaceholder: 'teacher@cit.edu',
-    endpoint: AUTH_ENDPOINTS.teacherLogin,
     footerLinks: [
       { label: 'About', page: 'landing', href: '#about' },
       { label: 'Student login', page: 'student-login' },
@@ -50,14 +48,17 @@ function validate(form, config) {
 }
 
 /**
- * Login page for students and teachers.
+ * Login page for students and teachers (mock auth).
  *
  * Props:
  *  - role: 'student' (default) | 'teacher'
- *  - onNavigate(page): optional; used for sign-up, forgot-password and footer links.
- *  - onLogin(user, role): optional; called with the authenticated user returned by the API.
+ *  - onSubmit({ email, password, role }): returns (or resolves to) { ok, user?, error? }.
+ *    This is the swap point for the real API call later.
+ *  - onLogin(user, role): called after a successful login.
+ *  - onNavigate(page): used for sign-up, forgot-password and footer links.
+ *  - flash: optional { type: 'success' | 'error', message } shown above the form.
  */
-export default function Login({ role = 'student', onNavigate, onLogin }) {
+export default function Login({ role = 'student', onSubmit, onLogin, onNavigate, flash }) {
   const config = ROLE_CONFIG[role] ?? ROLE_CONFIG.student;
   const idPrefix = `${role}-login`;
 
@@ -96,20 +97,21 @@ export default function Login({ role = 'student', onNavigate, onLogin }) {
     setServerError('');
 
     try {
-      const user = await postJson(config.endpoint, {
+      const result = await onSubmit({
         email: form.email.trim(),
         password: form.password,
+        role,
       });
+      if (!result?.ok) {
+        setServerError(result?.error ?? 'Incorrect email or password.');
+        setForm((prev) => ({ ...prev, password: '' }));
+        return;
+      }
       setForm(INITIAL_FORM);
       setTouched({});
-      onLogin?.(user, role);
+      onLogin?.(result.user, role);
     } catch (err) {
-      // Never reveal which credential was wrong.
-      setServerError(
-        err.status === 401 || err.status === 403
-          ? 'Incorrect email or password.'
-          : err.message
-      );
+      setServerError(err.message || 'Something went wrong. Please try again.');
       setForm((prev) => ({ ...prev, password: '' }));
     } finally {
       setSubmitting(false);
@@ -135,6 +137,7 @@ export default function Login({ role = 'student', onNavigate, onLogin }) {
       onNavigate={onNavigate}
     >
       <form className="kb-auth-form" onSubmit={handleSubmit} noValidate>
+        {flash && <FormAlert type={flash.type}>{flash.message}</FormAlert>}
         <FormAlert type="error">{serverError}</FormAlert>
 
         <TextField
@@ -155,22 +158,21 @@ export default function Login({ role = 'student', onNavigate, onLogin }) {
           {submitting ? 'Logging in…' : 'Login'}
         </button>
 
+        <p className="kb-auth-switch">
+          Forgot password?{' '}
+          <NavLink page="forgot-password" onNavigate={onNavigate}>Click here</NavLink>
+        </p>
+
         {role === 'teacher' ? (
           <p className="kb-auth-note">
             New teacher? Register with institutional credentials. Accounts are verified by
             your school administrator.
           </p>
         ) : (
-          <>
-            <p className="kb-auth-switch">
-              Forgot password?{' '}
-              <NavLink page="forgot-password" onNavigate={onNavigate}>Click here</NavLink>
-            </p>
-            <p className="kb-auth-switch">
-              New here?{' '}
-              <NavLink page="register" onNavigate={onNavigate}>Sign up</NavLink>
-            </p>
-          </>
+          <p className="kb-auth-switch">
+            New here?{' '}
+            <NavLink page="register" onNavigate={onNavigate}>Sign up</NavLink>
+          </p>
         )}
       </form>
     </AuthLayout>
