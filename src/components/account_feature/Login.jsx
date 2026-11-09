@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { AUTH_ENDPOINTS, EMAIL_PATTERN, STUDENT_ID_PATTERN, postJson } from './authApi';
 import { AuthLayout, FormAlert, NavLink, PasswordField, TextField } from './AuthShared';
+import Capybara from '../capybaraStyle/Capybara';
 
 const ROLE_CONFIG = {
   student: {
     badge: 'Student Portal',
     title: 'Welcome back',
+    greeting: 'Hi there! Ready to learn today?',
     idLabel: 'Institutional email / Student ID',
     idPlaceholder: 'Email address / ID number',
     endpoint: AUTH_ENDPOINTS.studentLogin,
@@ -24,6 +26,7 @@ const ROLE_CONFIG = {
   teacher: {
     badge: 'Teacher Portal',
     title: 'Teacher sign in',
+    greeting: 'Welcome, teacher! Your class is waiting.',
     idLabel: 'Institutional email',
     idPlaceholder: 'teacher@cit.edu',
     endpoint: AUTH_ENDPOINTS.teacherLogin,
@@ -49,6 +52,17 @@ function validate(form, config) {
   return errors;
 }
 
+/** Decide what the capybara mascot does, highest priority first. */
+function getCompanionState({ submitting, success, passwordFocused, authFailed, serverError, errors, greeting }) {
+  if (submitting) return { mood: 'thinking', message: 'Hmm, let me check that…' };
+  if (success) return { mood: 'happy', message: 'Yay! Welcome back!' };
+  if (passwordFocused) return { mood: 'eyes-closed', message: 'I will close my eyes! 🙈' };
+  if (authFailed) return { mood: 'sad', message: 'Oops! Your password is incorrect. Try again!' };
+  if (serverError) return { mood: 'sad', message: "Uh-oh, I can't reach the server right now." };
+  if (errors.password) return { mood: 'sad', message: "Don't forget your password!" };
+  return { mood: 'idle', message: greeting };
+}
+
 /**
  * Login page for students and teachers.
  *
@@ -66,6 +80,9 @@ export default function Login({ role = 'student', onNavigate, onLogin }) {
   const [touched, setTouched] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
+  const [authFailed, setAuthFailed] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -75,10 +92,17 @@ export default function Login({ role = 'student', onNavigate, onLogin }) {
       setErrors((prev) => ({ ...prev, [name]: validate(next, config)[name] }));
     }
     if (serverError) setServerError('');
+    if (authFailed) setAuthFailed(false);
+    if (success) setSuccess(false);
+  };
+
+  const handleFocus = (e) => {
+    if (e.target.name === 'password') setPasswordFocused(true);
   };
 
   const handleBlur = (e) => {
     const { name } = e.target;
+    if (name === 'password') setPasswordFocused(false);
     setTouched((prev) => ({ ...prev, [name]: true }));
     setErrors((prev) => ({ ...prev, [name]: validate(form, config)[name] }));
   };
@@ -94,6 +118,8 @@ export default function Login({ role = 'student', onNavigate, onLogin }) {
 
     setSubmitting(true);
     setServerError('');
+    setAuthFailed(false);
+    setSuccess(false);
 
     try {
       const user = await postJson(config.endpoint, {
@@ -102,14 +128,13 @@ export default function Login({ role = 'student', onNavigate, onLogin }) {
       });
       setForm(INITIAL_FORM);
       setTouched({});
+      setSuccess(true);
       onLogin?.(user, role);
     } catch (err) {
+      const isAuthError = err.status === 401 || err.status === 403;
+      setAuthFailed(isAuthError);
       // Never reveal which credential was wrong.
-      setServerError(
-        err.status === 401 || err.status === 403
-          ? 'Incorrect email or password.'
-          : err.message
-      );
+      setServerError(isAuthError ? 'Incorrect email or password.' : err.message);
       setForm((prev) => ({ ...prev, password: '' }));
     } finally {
       setSubmitting(false);
@@ -121,9 +146,20 @@ export default function Login({ role = 'student', onNavigate, onLogin }) {
     name,
     value: form[name],
     onChange: handleChange,
+    onFocus: handleFocus,
     onBlur: handleBlur,
     disabled: submitting,
     error: errors[name],
+  });
+
+  const companion = getCompanionState({
+    submitting,
+    success,
+    passwordFocused,
+    authFailed,
+    serverError,
+    errors,
+    greeting: config.greeting,
   });
 
   return (
@@ -133,6 +169,7 @@ export default function Login({ role = 'student', onNavigate, onLogin }) {
       title={config.title}
       footerLinks={config.footerLinks}
       onNavigate={onNavigate}
+      companion={<Capybara mood={companion.mood} message={companion.message} />}
     >
       <form className="kb-auth-form" onSubmit={handleSubmit} noValidate>
         <FormAlert type="error">{serverError}</FormAlert>
