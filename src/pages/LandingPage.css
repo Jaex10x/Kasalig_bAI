@@ -178,11 +178,31 @@
    -------------------------------------------------------------------------- */
 .kasalig-hero-modern {
   position: relative;
+  isolation: isolate;
   padding: 48px 0 80px;
   text-align: center;
 }
 
+/* Shared: low-res canvas upscaled into crisp square blocks */
+.pixel-canvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+}
+
+/* Hero pixel mosaic — extends up behind the sticky navbar */
+.hero-pixel-bg {
+  position: absolute;
+  top: -90px;
+  left: 0;
+  width: 100%;
+  height: min(calc(100% + 90px), 1150px);
+  z-index: -1;
+}
+
 .hero-center-wrapper {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -837,8 +857,13 @@
    5. Understand.Improve.Excel - Animated Feedbacks Marquee
    -------------------------------------------------------------------------- */
 .kasalig-feedbacks-section {
+  --fb-orange: #de7a40;        /* brand accent (matches --kb-orange) */
+  --fb-orange-light: #ec9a5f;
+  --fb-orange-deep: #c2672d;   /* matches --kb-orange-hover */
+  position: relative;
   padding: 70px 0 80px;
   overflow: hidden;
+  background: #faf7f2; /* same cream as the landing page background */
 }
 
 .feedback-header-center {
@@ -901,174 +926,215 @@
   margin-top: 4px;
 }
 
-/* 3D Infinite Marquee Viewport */
-.feedback-marquee-viewport {
-  width: 100%;
+/* Feedback wall: staggered rows of flat cards over an orange mosaic glow */
+.feedback-wall {
+  --fb-card-w: 400px;
+  --fb-card-gap: 20px;
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  perspective: 1200px;
-  transform-style: preserve-3d;
-  padding: 16px 0 24px;
+  gap: var(--fb-card-gap);
+  padding: 48px 0;
+  /* Orange band behind the cards, melting into the white section top and bottom */
+  background: linear-gradient(
+    180deg,
+    rgba(236, 154, 95, 0) 0%,
+    var(--fb-orange-light) 48px,
+    var(--fb-orange) 50%,
+    var(--fb-orange-deep) calc(100% - 48px),
+    rgba(194, 103, 45, 0) 100%
+  );
+  /* Fade the cards (and band) out toward the left/right edges */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
 }
 
-.marquee-track {
+/* Pixel-mosaic glow behind the cards (low-res canvas upscaled into square blocks) */
+.feedback-wall-glow {
+  position: absolute;
+  top: -48px;
+  left: 0;
+  width: 100%;
+  height: calc(100% + 96px);
+  z-index: 0;
+}
+
+.feedback-row {
+  position: relative;
+  z-index: 1;
+}
+
+/* Middle row sits half a card over, giving the brick-wall stagger */
+.feedback-row-2 {
+  margin-left: calc((var(--fb-card-w) + var(--fb-card-gap)) / -2);
+}
+
+.feedback-track {
   display: flex;
-  gap: 22px;
   width: max-content;
+  animation: feedbackSlideLeft 70s linear infinite;
 }
 
-.track-row-1 {
-  animation: marqueeScrollLeft 38s linear infinite;
+.feedback-row-2 .feedback-track {
+  animation-name: feedbackSlideRight;
+  animation-duration: 80s;
 }
 
-.track-row-2 {
-  animation: marqueeScrollRight 42s linear infinite;
+.feedback-row-3 .feedback-track {
+  animation-duration: 90s;
 }
 
-.marquee-track:hover {
+.feedback-wall:hover .feedback-track {
   animation-play-state: paused;
 }
 
-@keyframes marqueeScrollLeft {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-33.333%); }
+/* Track holds two identical halves, so -50% lands exactly on the loop point */
+@keyframes feedbackSlideLeft {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
 
-@keyframes marqueeScrollRight {
-  0% { transform: translateX(-33.333%); }
-  100% { transform: translateX(0); }
+@keyframes feedbackSlideRight {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
 }
 
-/* 3D Feedback Card */
-.feedback-chat-card-3d {
-  width: 326px;
-  background: linear-gradient(155deg, #ffffff 0%, #fffcf8 60%, #faf3eb 100%);
-  border-top: 2px solid rgba(255, 255, 255, 0.95);
-  border-left: 1px solid #ebd9c8;
-  border-right: 1px solid #ebd9c8;
-  border-bottom: 1px solid #dac0a9;
-  border-radius: 20px;
-  padding: 20px 22px;
-  /* 3D Extrusion Shadow */
-  box-shadow: 
-    0 1px 0 #ebd9c8, 
-    0 3px 0 #dfc6b0, 
-    0 5px 0 #d4b59d, 
-    0 16px 30px -4px rgba(45, 20, 10, 0.12), 
-    0 4px 10px rgba(0, 0, 0, 0.04);
-  display: flex;
-  flex-direction: column;
+@media (prefers-reduced-motion: reduce) {
+  .feedback-track { animation: none; }
+}
+
+/* Flat card */
+.feedback-card {
+  width: var(--fb-card-w);
+  min-height: 258px;
+  /* margin instead of flex gap keeps both halves the same width for a seamless loop */
+  margin-right: var(--fb-card-gap);
   flex-shrink: 0;
-  transform-style: preserve-3d;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.row-1-card {
-  transform: perspective(1000px) rotateX(6deg) rotateY(-2deg);
-}
-
-.row-2-card {
-  transform: perspective(1000px) rotateX(6deg) rotateY(2deg);
-}
-
-.feedback-chat-card-3d:hover {
-  transform: perspective(1000px) translateY(-12px) rotateX(0deg) rotateY(0deg) scale(1.05);
-  box-shadow: 
-    0 2px 0 #ebd9c8, 
-    0 6px 0 #dfc6b0, 
-    0 10px 0 #d4b59d, 
-    0 28px 46px -6px rgba(45, 20, 10, 0.22), 
-    0 0 20px rgba(222, 122, 64, 0.2);
-  z-index: 50;
-  border-top-color: #ffffff;
-}
-
-.feedback-card-header {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 14px;
+  padding: 22px 22px 18px;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow:
+    0 1px 2px rgba(120, 50, 10, 0.06),
+    0 10px 28px -12px rgba(120, 50, 10, 0.28);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-/* 3D Spherical Avatar */
-.feedback-avatar-3d {
-  width: 34px;
-  height: 34px;
+.feedback-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 2px 4px rgba(120, 50, 10, 0.08),
+    0 18px 36px -12px rgba(120, 50, 10, 0.38);
+}
+
+.feedback-avatar {
+  width: 40px;
+  height: 40px;
   border-radius: 9999px;
-  color: #ffffff;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  color: #ffffff;
+  font-size: 13px;
   font-weight: 800;
-  flex-shrink: 0;
-  box-shadow: 
-    inset 0 2px 4px rgba(255, 255, 255, 0.65), 
-    inset 0 -2px 4px rgba(0, 0, 0, 0.3), 
-    0 4px 8px rgba(0, 0, 0, 0.18);
+}
+
+.feedback-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .feedback-user-name {
-  font-size: 14px;
-  font-weight: 800;
-  color: #111827;
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b7280;
+  margin-bottom: 4px;
 }
 
 .feedback-card-text {
-  font-size: 13px;
-  line-height: 1.55;
-  color: #374151;
-  margin-bottom: 16px;
   flex: 1;
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.6;
+  color: #1f2937;
+  overflow-wrap: anywhere;
 }
 
 .feedback-card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 11.5px;
-  color: #94a3b8;
 }
 
-/* 3D Tactile Like Button */
-.feedback-like-button-3d {
+.feedback-card-meta {
+  display: inline-flex;
+  gap: 10px;
+  font-size: 15px;
+}
+
+.feedback-card-time {
+  color: #6b7280;
+}
+
+.feedback-card-reply {
+  color: #374151;
+  font-weight: 500;
+}
+
+.feedback-like-button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background-color: #fff9f5;
-  border: 1px solid #fed7aa;
-  padding: 5px 10px;
+  padding: 4px 6px;
+  background: none;
+  border: none;
   border-radius: 9999px;
-  box-shadow: 
-    0 2px 0 #fcd34d, 
-    0 3px 6px rgba(239, 68, 68, 0.15);
   cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.feedback-like-button-3d:hover {
-  transform: translateY(-2px) scale(1.08);
-  box-shadow: 
-    0 3px 0 #fcd34d, 
-    0 6px 12px rgba(239, 68, 68, 0.22);
+.feedback-like-button:hover {
+  transform: scale(1.1);
 }
 
-.feedback-like-button-3d:active {
-  transform: translateY(2px) scale(0.96);
-  box-shadow: 0 0 0 #fcd34d;
+.feedback-like-button:active {
+  transform: scale(0.94);
 }
 
-.feedback-like-button-3d.liked {
-  background-color: #fff1f2;
-  border-color: #fca5a5;
-  transform: scale(1.12);
+.feedback-like-button:focus-visible {
+  outline: 2px solid #de7a40;
+  outline-offset: 2px;
 }
 
 .like-count {
-  font-size: 11.5px;
-  font-weight: 800;
-  color: #ef4444;
+  font-size: 15px;
+  font-weight: 600;
+  color: #c2672d;
+}
+
+.feedback-like-button.liked .like-count {
+  color: #c2410c;
+}
+
+@media (max-width: 640px) {
+  .feedback-wall {
+    --fb-card-w: 300px;
+    --fb-card-gap: 14px;
+  }
+
+  .feedback-card {
+    min-height: 210px;
+    padding: 18px;
+  }
+
+  .feedback-card-text {
+    font-size: 15.5px;
+  }
 }
 
 /* --------------------------------------------------------------------------
