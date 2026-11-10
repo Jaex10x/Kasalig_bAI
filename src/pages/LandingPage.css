@@ -871,27 +871,116 @@
   margin-bottom: 40px;
 }
 
+/* Triangle layout: Improve centered on top, Understand bottom-left, Excel bottom-right */
 .feedback-app-icons-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 18px;
+  display: inline-grid;
+  grid-template-columns: repeat(4, 38px);
+  grid-template-areas:
+    ".          improve    improve    ."
+    "understand understand excel      excel";
+  justify-items: center;
+  column-gap: 0;
+  row-gap: 0;
+  margin-bottom: 22px;
+  padding-top: 8px;
+  perspective: 600px;
 }
+.app-bubble-wrap--improve    { grid-area: improve; }
+.app-bubble-wrap--understand { grid-area: understand; margin-top: -10px; }
+.app-bubble-wrap--excel      { grid-area: excel; margin-top: -10px; }
+
+/* Wrapper holds the floating tile + its ground shadow */
+.app-bubble-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  --float-delay: 0s;
+}
+.app-bubble-wrap:nth-child(2) { --float-delay: -1.2s; }
+.app-bubble-wrap:nth-child(3) { --float-delay: -2.4s; }
 
 .app-bubble {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  --tile-edge: rgba(0, 0, 0, 0.25);
+  position: relative;
+  width: 58px;
+  height: 58px;
+  border-radius: 17px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  transform-style: preserve-3d;
+  /* Layered shadows: inner top highlight, inner bottom shade, solid "thickness" edge, soft drop */
+  box-shadow:
+    inset 0 2px 1px rgba(255, 255, 255, 0.45),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.22),
+    0 5px 0 var(--tile-edge),
+    0 14px 22px rgba(0, 0, 0, 0.18);
+  animation: appBubbleFloat 3.6s ease-in-out infinite;
+  animation-delay: var(--float-delay);
+  transition: transform 0.25s ease;
+  cursor: default;
 }
 
-.pink-bubble { background: linear-gradient(135deg, #f43f5e, #fb7185); color: #fff; }
-.navy-bubble { background: linear-gradient(135deg, #1e293b, #334155); color: #fff; }
-.cyan-bubble { background: linear-gradient(135deg, #0284c7, #38bdf8); color: #fff; }
+/* Glossy sheen across the top half */
+.app-bubble::before {
+  content: '';
+  position: absolute;
+  inset: 3px 4px 50% 4px;
+  border-radius: 14px 14px 40% 40%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+.app-bubble svg {
+  position: relative;
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.3));
+  transform: translateZ(14px);
+}
+
+.app-bubble-wrap:hover .app-bubble {
+  animation-play-state: paused;
+  transform: translateY(-10px) rotateX(12deg) rotateY(-12deg) scale(1.06);
+}
+
+/* Ground shadow shrinks as the tile rises */
+.app-bubble-shadow {
+  width: 44px;
+  height: 8px;
+  margin-top: 12px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0) 70%);
+  animation: appBubbleShadow 3.6s ease-in-out infinite;
+  animation-delay: var(--float-delay);
+}
+
+.bubble-understand {
+  background: linear-gradient(145deg, #334155 0%, #1e293b 55%, #0f172a 100%);
+  --tile-edge: #0b1120;
+}
+.bubble-improve {
+  background: linear-gradient(145deg, #34d399 0%, #10b981 50%, #047857 100%);
+  --tile-edge: #065f46;
+}
+.bubble-excel {
+  background: linear-gradient(145deg, #a78bfa 0%, #7c3aed 55%, #5b21b6 100%);
+  --tile-edge: #4c1d95;
+}
+
+@keyframes appBubbleFloat {
+  0%, 100% { transform: translateY(0) rotateX(6deg) rotateY(-6deg); }
+  50%      { transform: translateY(-9px) rotateX(-4deg) rotateY(6deg); }
+}
+
+@keyframes appBubbleShadow {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(0.7); opacity: 0.55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-bubble,
+  .app-bubble-shadow { animation: none; }
+}
 
 /* Curved Title Styling */
 .curved-title-container {
@@ -1879,4 +1968,78 @@
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+/* ==========================================================================
+   Floating capybara companion (bottom-right, follows the scroll)
+   ========================================================================== */
+.kb-floating-capy {
+  position: fixed;
+  right: 20px;
+  bottom: 16px;
+  z-index: 900;
+  animation: kbCapyEnter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.kb-floating-capy-hit {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  transition: transform 0.25s ease;
+}
+.kb-floating-capy-hit:hover { transform: translateY(-4px) scale(1.04); }
+.kb-floating-capy-hit:focus-visible {
+  outline: 3px solid #de7a40;
+  outline-offset: 4px;
+  border-radius: 16px;
+}
+
+/* Smaller mascot; speech bubble anchored to the right so it never leaves the screen */
+.kb-floating-capy .kb-capy {
+  width: 180px;
+  align-items: flex-end;
+}
+.kb-floating-capy .kb-capy-svg {
+  filter: drop-shadow(0 8px 14px rgba(50, 25, 10, 0.18));
+}
+.kb-floating-capy .kb-capy-bubble {
+  width: max-content;
+  max-width: 240px;
+  min-height: 0;
+  margin-bottom: 4px;
+  font-size: 14px;
+  text-align: left;
+}
+.kb-floating-capy .kb-capy-bubble::after {
+  left: auto;
+  right: 70px;
+  transform: rotate(45deg);
+}
+
+/* Bob gently while the page is scrolling */
+.kb-floating-capy.is-scrolling .kb-capy-svg {
+  animation: kbCapyScrollBob 0.45s ease-in-out infinite;
+}
+
+@keyframes kbCapyEnter {
+  from { opacity: 0; transform: translateY(40px) scale(0.8); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes kbCapyScrollBob {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50%      { transform: translateY(-6px) rotate(-3deg); }
+}
+
+@media (max-width: 760px) {
+  .kb-floating-capy { right: 10px; bottom: 10px; }
+  .kb-floating-capy .kb-capy { width: 130px; }
+  .kb-floating-capy .kb-capy-bubble { max-width: 190px; font-size: 12px; }
+  .kb-floating-capy .kb-capy-bubble::after { right: 50px; }}
+
+@media (prefers-reduced-motion: reduce) {
+  .kb-floating-capy,
+  .kb-floating-capy.is-scrolling .kb-capy-svg { animation: none; }
 }

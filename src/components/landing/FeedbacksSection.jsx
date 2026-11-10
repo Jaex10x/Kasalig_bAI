@@ -3,6 +3,138 @@ import { HeartIcon } from './Icons';
 import { PixelCanvas, cellNoise } from './PixelCanvas';
 
 /* ---------------------------------------------------------------------------
+ * 3D app icons (Understand · Improve · Excel)
+ * Gradients + highlights give each glyph volume; the tile itself is shaded in CSS.
+ * ------------------------------------------------------------------------- */
+const BulbIcon = () => (
+  <svg viewBox="0 0 48 48" width="34" height="34" aria-hidden="true">
+    <defs>
+      <radialGradient id="fb-bulb-glass" cx="40%" cy="32%" r="65%">
+        <stop offset="0%" stopColor="#FFFBEB" />
+        <stop offset="45%" stopColor="#FDE047" />
+        <stop offset="100%" stopColor="#F59E0B" />
+      </radialGradient>
+      <linearGradient id="fb-bulb-base" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stopColor="#64748B" />
+        <stop offset="45%" stopColor="#E2E8F0" />
+        <stop offset="100%" stopColor="#475569" />
+      </linearGradient>
+      <radialGradient id="fb-bulb-glow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stopColor="#FDE047" stopOpacity="0.55" />
+        <stop offset="100%" stopColor="#FDE047" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    <circle cx="24" cy="19" r="18" fill="url(#fb-bulb-glow)" />
+    <g stroke="#FDE68A" strokeWidth="2.2" strokeLinecap="round">
+      <line x1="24" y1="2.5" x2="24" y2="5.5" />
+      <line x1="9" y1="8" x2="11.2" y2="10.2" />
+      <line x1="39" y1="8" x2="36.8" y2="10.2" />
+      <line x1="4" y1="20" x2="7" y2="20" />
+      <line x1="44" y1="20" x2="41" y2="20" />
+    </g>
+    <path
+      d="M24 8c-7 0-12 5.2-12 11.6 0 4.2 2.2 7 4.3 9 1.4 1.3 2.2 2.9 2.2 4.6V35h11v-1.8c0-1.7.8-3.3 2.2-4.6 2.1-2 4.3-4.8 4.3-9C36 13.2 31 8 24 8z"
+      fill="url(#fb-bulb-glass)"
+      stroke="#B45309"
+      strokeWidth="0.8"
+    />
+    <path d="M20.5 32v-5.5l3.5-3 3.5 3V32" fill="none" stroke="#B45309" strokeWidth="1.4" strokeLinejoin="round" />
+    <ellipse cx="19" cy="15" rx="3" ry="4.5" fill="#FFFFFF" opacity="0.75" transform="rotate(-25 19 15)" />
+    <rect x="18.5" y="35" width="11" height="7" rx="2" fill="url(#fb-bulb-base)" />
+    <line x1="18.8" y1="37.4" x2="29.2" y2="37.4" stroke="#334155" strokeWidth="0.9" />
+    <line x1="18.8" y1="39.6" x2="29.2" y2="39.6" stroke="#334155" strokeWidth="0.9" />
+    <path d="M21 42h6l-1 2.5h-4z" fill="#334155" />
+  </svg>
+);
+
+const ImproveIcon = () => (
+  <svg viewBox="0 0 48 48" width="34" height="34" aria-hidden="true">
+    <defs>
+      <linearGradient id="fb-bar" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stopColor="#FFFFFF" />
+        <stop offset="100%" stopColor="#BBF7D0" />
+      </linearGradient>
+      <linearGradient id="fb-bar-side" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#86EFAC" />
+        <stop offset="100%" stopColor="#15803D" />
+      </linearGradient>
+      <linearGradient id="fb-arrow" x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0%" stopColor="#FDE047" />
+        <stop offset="100%" stopColor="#F59E0B" />
+      </linearGradient>
+    </defs>
+    {/* Isometric bars: front face + darker side face for depth */}
+    <path d="M10 40V31h6v9z" fill="url(#fb-bar)" />
+    <path d="M16 40V31l2.5-2v9z" fill="url(#fb-bar-side)" />
+    <path d="M10 31l2.5-2h6L16 31z" fill="#F0FDF4" />
+    <path d="M20 40V24h6v16z" fill="url(#fb-bar)" />
+    <path d="M26 40V24l2.5-2v16z" fill="url(#fb-bar-side)" />
+    <path d="M20 24l2.5-2h6L26 24z" fill="#F0FDF4" />
+    <path d="M30 40V16h6v24z" fill="url(#fb-bar)" />
+    <path d="M36 40V16l2.5-2v24z" fill="url(#fb-bar-side)" />
+    <path d="M30 16l2.5-2h6L36 16z" fill="#F0FDF4" />
+    {/* Rising arrow */}
+    <path
+      d="M7 27L17 18l6 4.5L36 9"
+      fill="none"
+      stroke="#92400E"
+      strokeOpacity="0.35"
+      strokeWidth="4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      transform="translate(0.8 1.2)"
+    />
+    <path d="M7 27L17 18l6 4.5L36 9" fill="none" stroke="url(#fb-arrow)" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M30 6.5l9-1.5-1.5 9z" fill="#F59E0B" stroke="#FDE047" strokeWidth="0.8" strokeLinejoin="round" />
+  </svg>
+);
+
+const TrophyIcon = () => (
+  <svg viewBox="0 0 48 48" width="34" height="34" aria-hidden="true">
+    <defs>
+      <linearGradient id="fb-gold" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stopColor="#B45309" />
+        <stop offset="30%" stopColor="#FDE68A" />
+        <stop offset="55%" stopColor="#FBBF24" />
+        <stop offset="100%" stopColor="#92400E" />
+      </linearGradient>
+      <linearGradient id="fb-gold-v" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#FDE68A" />
+        <stop offset="100%" stopColor="#B45309" />
+      </linearGradient>
+      <linearGradient id="fb-plinth" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#7C2D12" />
+        <stop offset="100%" stopColor="#431407" />
+      </linearGradient>
+    </defs>
+    {/* Handles */}
+    <path d="M14 11H8c0 7 3 11 8 12" fill="none" stroke="url(#fb-gold-v)" strokeWidth="3" strokeLinecap="round" />
+    <path d="M34 11h6c0 7-3 11-8 12" fill="none" stroke="url(#fb-gold-v)" strokeWidth="3" strokeLinecap="round" />
+    {/* Cup */}
+    <path d="M13 7h22v8c0 7-4.8 12-11 12S13 22 13 15z" fill="url(#fb-gold)" />
+    <ellipse cx="24" cy="7" rx="11" ry="2" fill="#FEF3C7" />
+    <path d="M17 10v5c0 3.5 1.6 6.5 4 8" fill="none" stroke="#FFFFFF" strokeOpacity="0.7" strokeWidth="1.8" strokeLinecap="round" />
+    {/* Star */}
+    <path
+      d="M24 11.5l1.5 3.1 3.4.5-2.5 2.4.6 3.4-3-1.6-3 1.6.6-3.4-2.5-2.4 3.4-.5z"
+      fill="#FFFBEB"
+      opacity="0.95"
+    />
+    {/* Stem + base */}
+    <path d="M21.5 27h5l1 6h-7z" fill="url(#fb-gold)" />
+    <rect x="16" y="33" width="16" height="3.5" rx="1" fill="url(#fb-gold)" />
+    <rect x="14" y="36.5" width="20" height="6" rx="1.5" fill="url(#fb-plinth)" />
+    <rect x="19" y="38.3" width="10" height="2.4" rx="0.6" fill="#FBBF24" />
+  </svg>
+);
+
+const APP_ICONS = [
+  { key: 'understand', label: 'Understand', className: 'bubble-understand', Icon: BulbIcon },
+  { key: 'improve', label: 'Improve', className: 'bubble-improve', Icon: ImproveIcon },
+  { key: 'excel', label: 'Excel', className: 'bubble-excel', Icon: TrophyIcon },
+];
+
+/* ---------------------------------------------------------------------------
  * Pixel mosaic glow (behind the feedback cards)
  * ------------------------------------------------------------------------- */
 const GLOW_CELL = 18;
@@ -172,11 +304,16 @@ export const FeedbacksSection = () => {
   return (
     <section className="kasalig-feedbacks-section">
       <div className="kasalig-container feedback-header-center">
-        {/* Three cute app icon bubbles */}
+        {/* Three floating 3D app icons in a triangle: Improve on top, Understand + Excel below */}
         <div className="feedback-app-icons-row">
-          <div className="app-bubble pink-bubble">❤️</div>
-          <div className="app-bubble navy-bubble">✨</div>
-          <div className="app-bubble cyan-bubble">🌍</div>
+          {APP_ICONS.map(({ key, label, className, Icon }) => (
+            <div key={key} className={`app-bubble-wrap app-bubble-wrap--${key}`}>
+              <div className={`app-bubble ${className}`} role="img" aria-label={label} title={label}>
+                <Icon />
+              </div>
+              <span className="app-bubble-shadow" aria-hidden="true" />
+            </div>
+          ))}
         </div>
 
         {/* Curved Title: "Understand.Improve.Excel" */}
