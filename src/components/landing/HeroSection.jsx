@@ -1,9 +1,52 @@
 import { GamepadIcon, ArrowRightIcon, SparklesIcon } from './Icons';
 import QuizDemo from './QuizDemo';
+import { PixelCanvas, cellNoise, makeRamp } from './PixelCanvas';
+
+/* ---------------------------------------------------------------------------
+ * Hero pixel mosaic: light cream centre → soft peach/orange rings →
+ * lightened navy (slate-blue) at the outer edges, fading into the page cream.
+ * ------------------------------------------------------------------------- */
+const HERO_CELL = 56;
+const HERO_STEPS = 9;
+
+const heroRamp = makeRamp([
+  [0.0, '#fffbf5'], // near-white cream
+  [0.22, '#fff1e2'], // pale cream
+  [0.4, '#fde3cb'], // light peach
+  [0.56, '#fad4b2'], // light brand orange
+  [0.7, '#f1d9cb'], // peach → slate blend
+  [0.84, '#dfe2ec'], // pale slate
+  [1.0, '#cdd5e5'], // lightened navy
+]);
+
+const PAGE_CREAM = [250, 247, 242]; // #faf7f2
+
+const paintHero = (cx, cy, cols, rows) => {
+  // Distance from a point just above centre, measured in cell space so rings stay round.
+  const dx = (cx + 0.5 - cols / 2) / (cols * 0.5);
+  const dy = (cy + 0.5 - rows * 0.36) / (rows * 0.6);
+  // Blend round + square distance for Gizmo-style blocky rings.
+  const d = 0.6 * Math.hypot(dx, dy) + 0.4 * Math.max(Math.abs(dx), Math.abs(dy));
+  const jitter = (cellNoise(cx, cy) - 0.5) * 0.14;
+  const t = Math.min(1, Math.max(0, Math.round((d + jitter) * HERO_STEPS) / HERO_STEPS));
+  const rgb = heroRamp(t);
+
+  // Stepped fade into the page cream across the bottom 40%.
+  const v = (cy + 0.5) / rows;
+  const fade = v < 0.6 ? 0 : Math.min(1, Math.round(((v - 0.6) / 0.4) * 5) / 5);
+  return [
+    rgb[0] + (PAGE_CREAM[0] - rgb[0]) * fade,
+    rgb[1] + (PAGE_CREAM[1] - rgb[1]) * fade,
+    rgb[2] + (PAGE_CREAM[2] - rgb[2]) * fade,
+    1,
+  ];
+};
 
 export const HeroSection = ({ onStartLearning, onExplore }) => {
   return (
     <section id="home" className="kasalig-hero-modern">
+      <PixelCanvas cell={HERO_CELL} paint={paintHero} className="hero-pixel-bg" />
+
       {/* Ambient background sparkles */}
       <div className="hero-sparkle sparkle-top-left">
         <SparklesIcon size={24} color="#FDE68A" />
