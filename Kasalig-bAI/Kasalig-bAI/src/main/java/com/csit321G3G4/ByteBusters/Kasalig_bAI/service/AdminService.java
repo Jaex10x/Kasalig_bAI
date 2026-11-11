@@ -11,6 +11,7 @@ import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.AdminEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.StudentEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.TeacherEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.repository.AdminRepository;
+import com.csit321G3G4.ByteBusters.Kasalig_bAI.repository.CourseRepository;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.repository.StudentRepository;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.repository.TeacherRepository;
 
@@ -25,6 +26,9 @@ public class AdminService {
 
     @Autowired
     private TeacherRepository teacherRepository;
+
+    @Autowired
+    private CourseRepository courseRepository;
 
     public AdminEntity getAdmin(int adminId) {
         return adminRepository.findById(adminId)
@@ -46,6 +50,7 @@ public class AdminService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
         }
         TeacherEntity teacher = new TeacherEntity(body.getFullName(), body.getEmail());
+        teacher.setAdmin(findAdmin(body.getAdmin()));
         return teacherRepository.save(teacher);
     }
 
@@ -58,6 +63,9 @@ public class AdminService {
         }
         teacher.setFullName(body.getFullName());
         teacher.setEmail(body.getEmail());
+        if (body.getAdmin() != null) {
+            teacher.setAdmin(findAdmin(body.getAdmin()));
+        }
         return teacherRepository.save(teacher);
     }
 
@@ -67,6 +75,11 @@ public class AdminService {
         if (students > 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Teacher still has " + students + " student(s). Move or delete them first.");
+        }
+        long courses = courseRepository.countByTeacherTeacherId(teacherId);
+        if (courses > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Teacher still has " + courses + " course(s). Reassign or delete them first.");
         }
         teacherRepository.delete(teacher);
         return teacher;
@@ -130,8 +143,18 @@ public class AdminService {
     }
 
     
+    /** The managing admin is optional: a null reference leaves the teacher without one. */
+    private AdminEntity findAdmin(AdminEntity ref) {
+        if (ref == null) {
+            return null;
+        }
+        return adminRepository.findById(ref.getAdminId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Admin " + ref.getAdminId() + " does not exist"));
+    }
+
     private TeacherEntity findTeacher(TeacherEntity ref) {
-        if (ref == null) {                                       
+        if (ref == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "teacher.teacherId is required");
         }
         return teacherRepository.findById(ref.getTeacherId())
