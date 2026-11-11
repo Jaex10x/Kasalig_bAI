@@ -12,6 +12,10 @@ public class TeacherEntity {
     private int teacherId;
     private String fullName;
     private String email;
+    /** The admin who manages this teacher. Null for a teacher who registered on their own. */
+    @ManyToOne
+    @JoinColumn(name = "admin_id")
+    private AdminEntity admin;
 
     public TeacherEntity() {
     }
@@ -27,4 +31,6 @@ public class TeacherEntity {
     public void setFullName(String fullName) { this.fullName = fullName; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+    public AdminEntity getAdmin() { return admin; }
+    public void setAdmin(AdminEntity admin) { this.admin = admin; }
 }

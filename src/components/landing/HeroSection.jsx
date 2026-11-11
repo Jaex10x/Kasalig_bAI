@@ -3,33 +3,46 @@ import QuizDemo from './QuizDemo';
 import { PixelCanvas, cellNoise, makeRamp } from './PixelCanvas';
 
 /* ---------------------------------------------------------------------------
- * Hero pixel mosaic: light cream centre → soft peach/orange rings →
- * lightened navy (slate-blue) at the outer edges, fading into the page cream.
+ * Hero pixel mosaic: near-white centre → tinted rings → cooler outer edges,
+ * fading into the page cream.
+ * Every HERO_TICK_MS the whole mosaic cross-fades to the next palette in
+ * HERO_PALETTES (Gizmo-style colour cycling); the blocks also re-roll and the
+ * rings gently breathe in and out.
  * ------------------------------------------------------------------------- */
 const HERO_CELL = 56;
 const HERO_STEPS = 9;
+const HERO_TICK_MS = 1000;
+const HERO_FADE_MS = 600;
 
-const heroRamp = makeRamp([
-  [0.0, '#fffbf5'], // near-white cream
-  [0.22, '#fff1e2'], // pale cream
-  [0.4, '#fde3cb'], // light peach
-  [0.56, '#fad4b2'], // light brand orange
-  [0.7, '#f1d9cb'], // peach → slate blend
-  [0.84, '#dfe2ec'], // pale slate
-  [1.0, '#cdd5e5'], // lightened navy
-]);
+// Ring positions shared by every palette: centre → mid rings → outer edge.
+const HERO_STOPS = [0.0, 0.22, 0.4, 0.56, 0.7, 0.84, 1.0];
+
+// Ordered around the colour wheel so each change flows into the next.
+// The first entry is the brand palette (also the static, reduced-motion frame).
+// All palettes stay pastel so the dark heading and orange highlight stay readable.
+const HERO_PALETTES = [
+  ['#fffbf5', '#fff1e2', '#fde3cb', '#fad4b2', '#f1d9cb', '#dfe2ec', '#cdd5e5'], // brand peach → slate
+  ['#fffdf3', '#fff6d8', '#fdeab2', '#f9dc8c', '#f1e0a8', '#e3e5c6', '#cfe3cf'], // sunny yellow → sage
+  ['#f7fffa', '#e4fbee', '#c6f3da', '#a3e8c4', '#aee6d4', '#bfe6e4', '#abdcde'], // mint → teal
+  ['#f6fbff', '#e2f1ff', '#c6e2fd', '#a6cefa', '#b6cdf5', '#cacef2', '#bfc1ec'], // sky → indigo
+  ['#fbf8ff', '#efe7ff', '#dfd0fd', '#cbb4f8', '#d4c1f2', '#e2cdee', '#eac6e2'], // lilac → orchid
+  ['#fff7f9', '#ffe5ec', '#fdcfda', '#f9b3c5', '#f3c2ce', '#ecd2db', '#e0cee0'], // rose → mauve
+].map((colors) => makeRamp(colors.map((hex, i) => [HERO_STOPS[i], hex])));
 
 const PAGE_CREAM = [250, 247, 242]; // #faf7f2
 
-const paintHero = (cx, cy, cols, rows) => {
+const paintHero = (cx, cy, cols, rows, tick = 0) => {
   // Distance from a point just above centre, measured in cell space so rings stay round.
   const dx = (cx + 0.5 - cols / 2) / (cols * 0.5);
   const dy = (cy + 0.5 - rows * 0.36) / (rows * 0.6);
   // Blend round + square distance for Gizmo-style blocky rings.
   const d = 0.6 * Math.hypot(dx, dy) + 0.4 * Math.max(Math.abs(dx), Math.abs(dy));
-  const jitter = (cellNoise(cx, cy) - 0.5) * 0.14;
-  const t = Math.min(1, Math.max(0, Math.round((d + jitter) * HERO_STEPS) / HERO_STEPS));
-  const rgb = heroRamp(t);
+  // Per-cell jitter re-rolls on every tick; the sine drifts the rings in/out.
+  const jitter = (cellNoise(cx, cy, tick) - 0.5) * 0.14;
+  const breathe = Math.sin(tick * 0.8) * 0.035;
+  const t = Math.min(1, Math.max(0, Math.round((d + jitter + breathe) * HERO_STEPS) / HERO_STEPS));
+  // Each tick moves on to the next palette.
+  const rgb = HERO_PALETTES[tick % HERO_PALETTES.length](t);
 
   // Stepped fade into the page cream across the bottom 40%.
   const v = (cy + 0.5) / rows;
@@ -45,7 +58,13 @@ const paintHero = (cx, cy, cols, rows) => {
 export const HeroSection = ({ onStartLearning, onExplore }) => {
   return (
     <section id="home" className="kasalig-hero-modern">
-      <PixelCanvas cell={HERO_CELL} paint={paintHero} className="hero-pixel-bg" />
+      <PixelCanvas
+        cell={HERO_CELL}
+        paint={paintHero}
+        className="hero-pixel-bg"
+        interval={HERO_TICK_MS}
+        fade={HERO_FADE_MS}
+      />
 
       {/* Ambient background sparkles */}
       <div className="hero-sparkle sparkle-top-left">
