@@ -52,6 +52,15 @@ public class TeacherService {
         if (teacher == null || !passwordHasher.matches(password, teacher.getPasswordHash())) {
             throw new AuthException(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
         }
+        return toAuthUser(teacher);
+    }
+
+    // The signed-in teacher, for /api/auth/me
+    public AuthUser getAuthUser(int teacherId) {
+        return toAuthUser(getTeacherById(teacherId));
+    }
+
+    private static AuthUser toAuthUser(TeacherEntity teacher) {
         return new AuthUser(teacher.getTeacherId(), "teacher", teacher.getFullName(), teacher.getEmail(), null);
     }
 
@@ -80,7 +89,10 @@ public class TeacherService {
         if (!email.equalsIgnoreCase(teacher.getEmail()) && trepo.existsByEmailIgnoreCase(email)) {
             throw new AuthException(HttpStatus.CONFLICT, "Email is already in use.");
         }
-        teacher.setFullName(newDetails.getFullName());
+        if (isBlank(newDetails.getFullName())) {
+            throw new AuthException(HttpStatus.BAD_REQUEST, "Full name cannot be empty.");
+        }
+        teacher.setFullName(newDetails.getFullName().trim());
         teacher.setEmail(email);
         if (!isBlank(newDetails.getPassword())) {
             teacher.setPasswordHash(passwordHasher.hash(newDetails.getPassword()));

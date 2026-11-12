@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AuthContext } from './AuthContext';
-import { ApiError, AUTH_ENDPOINTS, postJson } from '../components/account_feature/authApi';
+import { ApiError, AUTH_ENDPOINTS, postJson, requestJson } from '../components/account_feature/authApi';
 
-// The signed-in user's public profile ({ id, role, fullName, email, course }) is kept in
-// localStorage so a page refresh does not log them out. No password is ever stored here.
-const SESSION_KEY = 'kb_session_user';
+// The session is { token, expiresAt, user }. The token is the JWT from login: it is sent as
+// "Authorization: Bearer <token>" and is what tells the backend who is calling. user is the public
+// profile ({ id, role, fullName, email, course }). No password is ever stored here.
+// Kept in localStorage so a page refresh does not log the user out.
+const SESSION_KEY = 'kb_session';
 
-// Left behind by the old browser-only mock auth, which kept passwords in plain text.
-const LEGACY_MOCK_KEYS = ['kb_mock_users', 'kb_mock_session'];
+// Left behind by older versions: the browser-only mock auth (plain-text passwords) and the
+// token-less session.
+const LEGACY_KEYS = ['kb_mock_users', 'kb_mock_session', 'kb_session_user'];
 
 // Only these fields are kept, whatever else a response carries.
 const toSessionUser = ({ id, role, fullName, email, course }) => ({
@@ -18,25 +21,33 @@ const toSessionUser = ({ id, role, fullName, email, course }) => ({
   course: course ?? null,
 });
 
+const isValidUser = (user) =>
+  Boolean(user) &&
+  Number.isInteger(user.id) &&
+  (user.role === 'student' || user.role === 'teacher') &&
+  typeof user.fullName === 'string' &&
+  typeof user.email === 'string';
+
+const isLive = (session) =>
+  Boolean(session) &&
+  typeof session.token === 'string' &&
+  typeof session.expiresAt === 'number' &&
+  session.expiresAt > Date.now() &&
+  isValidUser(session.user);
+
 function readSession() {
   try {
-    LEGACY_MOCK_KEYS.forEach((key) => window.localStorage.removeItem(key));
+    LEGACY_KEYS.forEach((key) => window.localStorage.removeItem(key));
     const saved = JSON.parse(window.localStorage.getItem(SESSION_KEY));
-    const isValid =
-      saved &&
-      Number.isInteger(saved.id) &&
-      (saved.role === 'student' || saved.role === 'teacher') &&
-      typeof saved.fullName === 'string' &&
-      typeof saved.email === 'string';
-    return isValid ? toSessionUser(saved) : null;
+    return isLive(saved) ? { ...saved, user: toSessionUser(saved.user) } : null;
   } catch {
     return null;
   }
 }
 
-function writeSession(user) {
+function writeSession(session) {
   try {
-    if (user) window.localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+    if (session) window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     else window.localStorage.removeItem(SESSION_KEY);
   } catch {
     // Storage unavailable (private mode, quota): the session still works until the tab closes.
@@ -44,7 +55,69 @@ function writeSession(user) {
 }
 
 export default function AuthProvider({ children }) {
-  const [user, setUser] = useState(readSession);
+  const [session, setSession] = useState(readSession);
+
+  const saveSession = useCallback((next) => {
+    setSession(next);
+    writeSession(next);
+  }, []);
+
+  const logout = useCallback(() => saveSession(null), [saveSession]);
+
+  /**
+   * Calls the backend as the signed-in user. If the token is rejected (expired, or the account was
+   * deleted), the user is logged out and the ApiError is rethrown.
+   */
+  const savedToken = session?.token;
+  const authRequest = useCallback(
+    async (method, path, body) => {
+      try {
+        return await requestJson(method, path, { body, token: savedToken });
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) logout();
+        throw err;
+      }
+    },
+    [savedToken, logout]
+  );
+
+  // On page load, check that the saved token still works and refresh the profile from the server.
+  // Only a definite "no" (401, or 404 for a deleted account) logs out; a network error keeps the
+  // session so the app still opens while the backend is restarting.
+  useEffect(() => {
+    if (!savedToken) return undefined;
+    let cancelled = false;
+    requestJson('GET', AUTH_ENDPOINTS.me, { token: savedToken })
+      .then((me) => {
+        if (cancelled || !isValidUser(me)) return;
+        setSession((current) => {
+          if (current?.token !== savedToken) return current;
+          const next = { ...current, user: toSessionUser(me) };
+          writeSession(next);
+          return next;
+        });
+      })
+      .catch((err) => {
+        if (!cancelled && err instanceof ApiError && (err.status === 401 || err.status === 404)) {
+          logout();
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Only when the app opens or a new token arrives.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedToken]);
+
+  // Log out the moment the token expires, even if the tab stays open.
+  const expiresAt = session?.expiresAt;
+  useEffect(() => {
+    if (!expiresAt) return undefined;
+    // setTimeout overflows past ~24.8 days; tokens last hours, so cap it to be safe.
+    const delay = Math.min(Math.max(expiresAt - Date.now(), 0), 2 ** 31 - 1);
+    const timer = setTimeout(logout, delay);
+    return () => clearTimeout(timer);
+  }, [expiresAt, logout]);
 
   /**
    * login({ email, password, role }) -> { ok: true, user } | { ok: false, error }
@@ -53,27 +126,25 @@ export default function AuthProvider({ children }) {
    */
   const login = async ({ email, password, role = 'student' }) => {
     const endpoint = role === 'teacher' ? AUTH_ENDPOINTS.teacherLogin : AUTH_ENDPOINTS.studentLogin;
-    let account;
+    let response;
     try {
-      account = await postJson(endpoint, { email, password });
+      response = await postJson(endpoint, { email, password });
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         return { ok: false, error: 'Incorrect email or password.' };
       }
       throw err;
     }
-    if (!account?.id) {
+    const next = {
+      token: response?.token,
+      expiresAt: response?.expiresAt,
+      user: response?.user ? toSessionUser(response.user) : null,
+    };
+    if (!isLive(next)) {
       throw new ApiError('The server sent an unexpected response. Please try again.', 502);
     }
-    const signedIn = toSessionUser(account);
-    setUser(signedIn);
-    writeSession(signedIn);
-    return { ok: true, user: signedIn };
-  };
-
-  const logout = () => {
-    setUser(null);
-    writeSession(null);
+    saveSession(next);
+    return { ok: true, user: next.user };
   };
 
   /**
@@ -102,21 +173,46 @@ export default function AuthProvider({ children }) {
   };
 
   /**
-   * Not connected yet: the backend has no way to know who is calling, so it cannot safely let
-   * a user change their own account. Fails honestly instead of pretending to save.
+   * updateUser({ fullName, email, course? }) -> { ok: true, user } | { ok: false, error }
+   * Saves the signed-in user's own account. The backend checks the token, so a user can only
+   * change their own account.
    */
-  const updateUser = async () => ({
-    ok: false,
-    error: 'Saving account changes is not connected to the server yet.',
-  });
+  const updateUser = async ({ fullName, email, course }) => {
+    const user = session?.user;
+    if (!user) return { ok: false, error: 'Please log in again.' };
+
+    const isTeacher = user.role === 'teacher';
+    const path = isTeacher ? AUTH_ENDPOINTS.updateTeacher(user.id) : AUTH_ENDPOINTS.updateStudent(user.id);
+    const body = isTeacher ? { fullName, email } : { fullName, email, course: course ?? null };
+
+    try {
+      const saved = await authRequest('PUT', path, body);
+      const nextUser = toSessionUser({
+        ...user,
+        fullName: saved?.fullName ?? fullName,
+        email: saved?.email ?? email,
+        course: isTeacher ? null : saved?.course ?? course ?? null,
+      });
+      saveSession({ ...session, user: nextUser });
+      return { ok: true, user: nextUser };
+    } catch (err) {
+      if (err instanceof ApiError && err.status >= 400 && err.status < 500) {
+        return { ok: false, error: err.message };
+      }
+      throw err;
+    }
+  };
 
   const value = {
-    isAuthenticated: Boolean(user),
-    user,
+    isAuthenticated: Boolean(session),
+    user: session?.user ?? null,
+    token: session?.token ?? null,
     login,
     logout,
     register,
     updateUser,
+    // For future features: authRequest('GET', '/api/course/getCourses') sends the token for you.
+    authRequest,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

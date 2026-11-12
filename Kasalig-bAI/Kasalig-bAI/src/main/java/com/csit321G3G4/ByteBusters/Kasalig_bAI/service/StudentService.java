@@ -51,6 +51,15 @@ public class StudentService {
         if (student == null || !passwordHasher.matches(password, student.getPasswordHash())) {
             throw new AuthException(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
         }
+        return toAuthUser(student);
+    }
+
+    // The signed-in student, for /api/auth/me
+    public AuthUser getAuthUser(int studentId) {
+        return toAuthUser(getStudentById(studentId));
+    }
+
+    private static AuthUser toAuthUser(StudentEntity student) {
         return new AuthUser(student.getStudentId(), "student", student.getFullName(), student.getEmail(),
                 student.getCourse());
     }
@@ -81,10 +90,18 @@ public class StudentService {
         if (!email.equalsIgnoreCase(student.getEmail()) && srepo.existsByEmailIgnoreCase(email)) {
             throw new AuthException(HttpStatus.CONFLICT, "Email is already in use.");
         }
-        student.setFullName(newDetails.getFullName());
+        if (isBlank(newDetails.getFullName())) {
+            throw new AuthException(HttpStatus.BAD_REQUEST, "Full name cannot be empty.");
+        }
+        student.setFullName(newDetails.getFullName().trim());
         student.setEmail(email);
-        student.setYearLevel(newDetails.getYearLevel());
-        student.setCourse(newDetails.getCourse());
+        // Fields left out of the request keep their current value.
+        if (newDetails.getYearLevel() != null) {
+            student.setYearLevel(newDetails.getYearLevel());
+        }
+        if (newDetails.getCourse() != null) {
+            student.setCourse(isBlank(newDetails.getCourse()) ? null : newDetails.getCourse().trim());
+        }
         if (!isBlank(newDetails.getPassword())) {
             student.setPasswordHash(passwordHasher.hash(newDetails.getPassword()));
         }
