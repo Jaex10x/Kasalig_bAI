@@ -8,7 +8,6 @@ import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.TeacherEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.service.TeacherService;
 import java.util.List;
 
-/** TEACHER: read own account; Create, Read, Update her own students. */
 @RestController
 @RequestMapping("/api/teacher")
 public class TeacherController {
@@ -16,33 +15,33 @@ public class TeacherController {
     @Autowired
     private TeacherService teacherService;
 
-
+    //=====Teacher creates own account========
     @PostMapping("/postTeacher")
     public TeacherEntity postTeacher(@RequestBody TeacherEntity body) {
         return teacherService.postTeacher(body);
     }
-    @GetMapping
+    @GetMapping("/{teacherId}")
     public TeacherEntity getMyAccount(@PathVariable Integer teacherId) {
         return teacherService.getMyAccount(teacherId);
     }
-
+    //========Teachers manages students account====
     @GetMapping("/getAllStudents")
     public List<StudentEntity> getAllStudents() {
         return teacherService.getAllStudents();
     }
 
-    @GetMapping("/students/{studentId}")
-    public StudentEntity getMyStudent(@PathVariable Integer teacherId, @PathVariable Integer studentId) {
+    @GetMapping("/getStudents/{studentId}")
+    public StudentEntity getMyStudent(@PathVariable int teacherId, @PathVariable Integer studentId) {
         return teacherService.getMyStudent(teacherId, studentId);
     }
 
     @PostMapping("/postStudents")
-    public StudentEntity posttudent(@PathVariable int teacherId, @RequestBody StudentEntity body) {
+    public StudentEntity posttudent(@RequestParam  int teacherId, @RequestBody StudentEntity body) {
         return teacherService.postStudent(teacherId, body);
     }
 
-    @PutMapping("/putStudents/{studentId}")
-    public StudentEntity putStudent(@PathVariable Integer teacherId, @PathVariable Integer studentId,
+    @PutMapping("/putStudent/{studentId}")
+    public StudentEntity putStudent(@RequestParam int teacherId, @RequestParam  int studentId,
                                         @RequestBody StudentEntity body) {
         return teacherService.putStudent(teacherId, studentId, body);
     }
