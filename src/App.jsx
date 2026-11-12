@@ -1,45 +1,38 @@
-  import React, { useState } from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
-import StudentLogin from './pages/StudentLogin';
-import TeacherLogin from './pages/TeacherLogin';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import EditAccountPage from './pages/EditAccountPage';
+import DashboardPage from './pages/DashboardPage';
+import ProtectedRoute from './components/ProtectedRoute';
+import useAppNavigate from './hooks/useAppNavigate';
+
+// The landing page still talks in "page names"; useAppNavigate maps them to URLs.
+function LandingRoute() {
+  const goTo = useAppNavigate();
+  return <LandingPage onNavigate={goTo} />;
+}
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('landing');
+  return (
+    <Routes>
+      <Route path="/" element={<LandingRoute />} />
+      {/* The keys give each login page its own form, so nothing typed carries over between them. */}
+      <Route path="/login" element={<LoginPage key="student" role="student" />} />
+      <Route path="/teacher-login" element={<LoginPage key="teacher" role="teacher" />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-  const handleNavigate = (page) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+      {/* Signed-in users only; everyone else is sent to /login. */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/account/edit" element={<EditAccountPage />} />
+      </Route>
 
-  if (currentPage === 'student-login') {
-    return (
-      <div style={{ padding: '24px', textAlign: 'center' }}>
-        <button 
-          onClick={() => handleNavigate('landing')}
-          style={{ marginBottom: '16px', padding: '8px 16px', cursor: 'pointer' }}
-        >
-          ← Back to Landing Page
-        </button>
-        <StudentLogin onNavigate={handleNavigate} />
-      </div>
-    );
-  }
-
-  if (currentPage === 'teacher-login') {
-    return (
-      <div style={{ padding: '24px', textAlign: 'center' }}>
-        <button 
-          onClick={() => handleNavigate('landing')}
-          style={{ marginBottom: '16px', padding: '8px 16px', cursor: 'pointer' }}
-        >
-          ← Back to Landing Page
-        </button>
-        <TeacherLogin onNavigate={handleNavigate} />
-      </div>
-    );
-  }
-
-  return <LandingPage onNavigate={handleNavigate} />;
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }
 
 export default App;

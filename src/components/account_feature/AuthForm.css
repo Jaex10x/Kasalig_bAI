@@ -1,0 +1,584 @@
+/* ==========================================================================
+   Account feature (register / login) – scoped with the .kb-auth- prefix
+   Palette mirrors the landing page (src/pages/LandingPage.css).
+   ========================================================================== */
+
+.kb-auth-page {
+  --kb-cream: #faf7f2;          /* landing page background */
+  --kb-surface: #ffffff;        /* landing card surface */
+  --kb-input-bg: #fffcf8;
+  --kb-brown: #7a4a2b;
+  --kb-brown-soft: #a88a72;     /* input border, ≥3:1 on white */
+  --kb-orange: #de7a40;         /* landing accent */
+  --kb-orange-hover: #c2672d;
+  --kb-orange-text: #b35a22;    /* accent for small text, ≥4.5:1 on white */
+  --kb-navy: #152232;
+  --kb-heading: #111827;
+  --kb-text: #1e293b;
+  --kb-muted: #64748b;
+  --kb-divider: #ebd9c8;
+  --kb-shadow: 0 10px 30px -4px rgba(50, 25, 10, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  --kb-error: #c0392b;
+  --kb-success: #2e7d4f;
+
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+  box-sizing: border-box;
+  background: var(--kb-cream);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--kb-text);
+}
+
+.kb-auth-page *,
+.kb-auth-page *::before,
+.kb-auth-page *::after {
+  box-sizing: border-box;
+}
+
+/* Card + optional companion (mascot) side by side */
+.kb-auth-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  width: 100%;
+  max-width: 760px;
+}
+
+.kb-auth-card {
+  width: 100%;
+  max-width: 380px;
+  padding: 28px 24px 18px;
+  background: var(--kb-surface);
+  border: 1px solid var(--kb-divider);
+  border-radius: 20px;
+  box-shadow: var(--kb-shadow);
+}
+
+@media (max-width: 760px) {
+  .kb-auth-stage {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+/* ---------- Header ---------- */
+.kb-auth-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--kb-divider);
+}
+
+.kb-auth-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kb-auth-brand-name {
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--kb-brown);
+  letter-spacing: -0.2px;
+}
+
+.kb-auth-brand-accent {
+  color: var(--kb-orange);
+}
+
+.kb-auth-badge {
+  margin-top: 14px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--kb-orange);
+  color: #3a2414;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.kb-auth-badge.is-teacher {
+  background: var(--kb-navy);
+  color: #ffffff;
+}
+
+.kb-auth-title {
+  margin: 14px 0 6px;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--kb-navy);
+  letter-spacing: -0.3px;
+}
+
+.kb-auth-tagline {
+  margin: 0;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--kb-muted);
+}
+
+/* ---------- Form ---------- */
+.kb-auth-form {
+  padding: 20px 0 24px;
+  border-bottom: 1px solid var(--kb-divider);
+}
+
+.kb-auth-field {
+  margin-bottom: 14px;
+}
+
+.kb-auth-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--kb-brown);
+}
+
+.kb-auth-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--kb-brown-soft);
+  border-radius: 6px;
+  background: var(--kb-input-bg);
+  font: inherit;
+  font-size: 13px;
+  color: var(--kb-navy);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kb-auth-input::placeholder {
+  color: #a59a8e;
+}
+
+.kb-auth-input:focus {
+  outline: none;
+  border-color: var(--kb-orange);
+  box-shadow: 0 0 0 3px rgba(232, 132, 58, 0.2);
+}
+
+.kb-auth-input.has-error {
+  border-color: var(--kb-error);
+}
+
+.kb-auth-input.has-error:focus {
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15);
+}
+
+.kb-auth-input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Dropdown: a native <select> dressed like the text inputs, with our own arrow */
+.kb-auth-select {
+  position: relative;
+}
+
+.kb-auth-select .kb-auth-input {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 36px;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+/* Nothing picked yet: show the prompt in the same grey as a text placeholder */
+.kb-auth-select .kb-auth-input.is-placeholder {
+  color: #a59a8e;
+}
+
+.kb-auth-select .kb-auth-input option {
+  color: var(--kb-navy);
+}
+
+.kb-auth-select .kb-auth-input:disabled {
+  cursor: not-allowed;
+}
+
+.kb-auth-select-icon {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  color: var(--kb-brown-soft);
+  pointer-events: none;
+}
+
+/* ---------- Course picker (searchable, grouped dropdown) ---------- */
+/* The panel hangs off the whole field, so it opens below the error line
+   (when there is one) instead of covering it. */
+.kb-course-field {
+  position: relative;
+}
+
+/* Closed state: looks like the other inputs, with the course's icon in front */
+.kb-course-trigger {
+  width: 100%;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 0 6px;
+  border: 1px solid var(--kb-brown-soft);
+  border-radius: 6px;
+  background: var(--kb-input-bg);
+  font: inherit;
+  font-size: 13px;
+  color: var(--kb-navy);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kb-course-trigger:focus-visible,
+.kb-course-trigger.is-open {
+  outline: none;
+  border-color: var(--kb-orange);
+  box-shadow: 0 0 0 3px rgba(232, 132, 58, 0.2);
+}
+
+.kb-course-trigger.has-error {
+  border-color: var(--kb-error);
+}
+
+.kb-course-trigger.has-error:focus-visible,
+.kb-course-trigger.has-error.is-open {
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15);
+}
+
+.kb-course-trigger:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.kb-course-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kb-course-value.is-placeholder {
+  color: #a59a8e;
+}
+
+.kb-course-chevron {
+  display: inline-flex;
+  color: var(--kb-brown-soft);
+  transition: transform 0.2s ease;
+}
+
+.kb-course-trigger.is-open .kb-course-chevron {
+  transform: rotate(180deg);
+}
+
+/* Small icon tile; each field of study has its own tint */
+.kb-course-chip {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: #f1ebe2;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.kb-course-chip.is-empty { opacity: 0.55; }
+.kb-course-chip.is-computing { background: #e3eeff; }
+.kb-course-chip.is-engineering { background: #fde9d6; }
+.kb-course-chip.is-business { background: #e2f5e9; }
+.kb-course-chip.is-health { background: #fde6ec; }
+.kb-course-chip.is-law { background: #ece7fb; }
+.kb-course-chip.is-education { background: #fff2c9; }
+
+/* Open state: floating panel under the field */
+.kb-course-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  overflow: hidden;
+  border: 1px solid var(--kb-divider);
+  border-radius: 14px;
+  background: var(--kb-surface);
+  box-shadow: 0 18px 40px -12px rgba(50, 25, 10, 0.28), 0 4px 10px -4px rgba(50, 25, 10, 0.08);
+  transform-origin: top center;
+  animation: kbCourseOpen 0.16s ease;
+}
+
+@keyframes kbCourseOpen {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.kb-course-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--kb-divider);
+  color: var(--kb-brown-soft);
+}
+
+.kb-course-search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  color: var(--kb-navy);
+}
+
+.kb-course-search-input::placeholder {
+  color: #a59a8e;
+}
+
+/* How many courses are listed right now */
+.kb-course-count {
+  flex: none;
+  min-width: 22px;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: #f6ede3;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--kb-brown);
+}
+
+.kb-course-list {
+  max-height: 248px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 6px 6px;
+}
+
+.kb-course-group-label {
+  padding: 10px 8px 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--kb-muted);
+}
+
+.kb-course-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 9px;
+  font-size: 13px;
+  color: var(--kb-text);
+  cursor: pointer;
+}
+
+/* Highlighted by the mouse or the arrow keys */
+.kb-course-option.is-active {
+  background: #fdf1e6;
+}
+
+.kb-course-option.is-selected {
+  font-weight: 600;
+  color: var(--kb-navy);
+}
+
+.kb-course-option-name {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The part of the name that matches the search */
+.kb-course-option-name mark {
+  border-radius: 3px;
+  background: #fbd9bd;
+  color: inherit;
+}
+
+.kb-course-check {
+  flex: none;
+  display: inline-flex;
+  color: var(--kb-orange-text);
+}
+
+.kb-course-empty {
+  margin: 0;
+  padding: 20px 12px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--kb-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kb-course-panel { animation: none; }
+  .kb-course-chevron { transition: none; }
+}
+
+.kb-auth-password {
+  position: relative;
+}
+
+.kb-auth-password .kb-auth-input {
+  padding-right: 40px;
+}
+
+.kb-auth-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--kb-brown-soft);
+  cursor: pointer;
+}
+
+.kb-auth-toggle:hover {
+  color: var(--kb-brown);
+}
+
+.kb-auth-toggle:focus-visible {
+  outline: 2px solid var(--kb-orange);
+  outline-offset: 1px;
+}
+
+.kb-auth-error {
+  margin: 5px 0 0;
+  font-size: 11px;
+  color: var(--kb-error);
+}
+
+.kb-auth-alert {
+  margin-bottom: 14px;
+  padding: 9px 11px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.kb-auth-alert.is-error {
+  background: #fbeae7;
+  border: 1px solid #f0c2bb;
+  color: var(--kb-error);
+}
+
+.kb-auth-alert.is-success {
+  background: #e7f4ec;
+  border: 1px solid #bfe0cb;
+  color: var(--kb-success);
+}
+
+.kb-auth-submit {
+  width: 100%;
+  height: 40px;
+  margin-top: 4px;
+  border: none;
+  border-radius: 6px;
+  background: var(--kb-orange);
+  color: #2b1a0e;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+}
+
+.kb-auth-submit:hover:not(:disabled) {
+  background: var(--kb-orange-hover);
+}
+
+.kb-auth-submit:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.kb-auth-submit:focus-visible {
+  outline: 2px solid var(--kb-navy);
+  outline-offset: 2px;
+}
+
+.kb-auth-submit:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.kb-auth-switch {
+  margin: 16px 0 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--kb-muted);
+}
+
+.kb-auth-switch + .kb-auth-switch {
+  margin-top: 12px;
+}
+
+.kb-auth-note {
+  margin: 16px 0 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #f1ebe2;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--kb-muted);
+}
+
+.kb-auth-link {
+  color: var(--kb-orange-text);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.kb-auth-link:hover {
+  text-decoration: underline;
+}
+
+.kb-auth-link:focus-visible {
+  outline: 2px solid var(--kb-orange);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ---------- Footer ---------- */
+.kb-auth-footer {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  padding-top: 14px;
+  font-size: 11px;
+}
+
+@media (max-width: 380px) {
+  .kb-auth-card {
+    padding-inline: 18px;
+  }
+  .kb-auth-title {
+    font-size: 23px;
+  }
+}
