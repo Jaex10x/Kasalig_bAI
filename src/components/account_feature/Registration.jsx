@@ -7,7 +7,10 @@ import {
   postJson,
 } from './authApi';
 import { AuthLayout, FormAlert, NavLink, PasswordField, TextField } from './AuthShared';
-import Capybara from '../capybaraStyle/Capybara';
+import CoursePicker from './CoursePicker';
+import { COURSES } from './courses';
+import PokeableCapybara from '../capybaraStyle/PokeableCapybara';
+import { pointAtForm } from './pointAtForm';
 
 const INITIAL_FORM = {
   fullName: '',
@@ -38,7 +41,7 @@ function validate(form) {
   }
 
   if (!form.course.trim()) {
-    errors.course = 'Please enter your course.';
+    errors.course = 'Please select your course.';
   }
 
   if (!form.password) {
@@ -62,7 +65,7 @@ function fieldHint(field, firstName) {
         ? `Nice to meet you, ${firstName}! Now your school email or student ID.`
         : 'Now your institutional email or student ID.';
     case 'course':
-      return 'Which course are you taking? e.g. BS Information Technology.';
+      return 'Which course are you taking? Pick it from the list.';
     case 'password':
       return `Make a password with at least ${MIN_PASSWORD_LENGTH} characters. I won't peek! 🙈`;
     default:
@@ -84,6 +87,10 @@ function getCompanionState({ form, errors, focusedField, submitting, success, se
   }
   if (focusedField) {
     if (errors[focusedField]) return { mood: 'sad', message: errors[focusedField] };
+    // The capybara cheers for whichever course was just picked.
+    if (focusedField === 'course' && form.course) {
+      return { mood: 'happy', message: `${form.course}? Great choice! 🎓` };
+    }
     return { mood: 'idle', message: fieldHint(focusedField, firstName) };
   }
 
@@ -165,7 +172,7 @@ export default function Registration({ onSubmit, onNavigate, onRegistered }) {
     try {
       let student;
       if (onSubmit) {
-        // Auth from AuthProvider (mock for now): returns { ok, user } | { ok: false, error }.
+        // AuthProvider's register: { ok, user } | { ok: false, error }; throws if the server fails.
         const result = await onSubmit(payload);
         if (!result?.ok) {
           setServerError(result?.error ?? 'Could not create your account.');
@@ -214,7 +221,9 @@ export default function Registration({ onSubmit, onNavigate, onRegistered }) {
       title="Create your account"
       footerLinks={FOOTER_LINKS}
       onNavigate={onNavigate}
-      companion={<Capybara mood={companion.mood} message={companion.message} />}
+      companion={
+        <PokeableCapybara mood={companion.mood} message={companion.message} pointer={pointAtForm} />
+      }
     >
       <form className="kb-auth-form" onSubmit={handleSubmit} noValidate>
         <FormAlert type="success">{success && 'Account created! You can now log in.'}</FormAlert>
@@ -235,12 +244,11 @@ export default function Registration({ onSubmit, onNavigate, onRegistered }) {
           autoComplete="username"
           placeholder="2024-01530@cit.edu"
         />
-        <TextField
+        <CoursePicker
           {...fieldProps('course')}
           label="Course"
-          type="text"
-          autoComplete="off"
-          placeholder="BS Information Technology"
+          options={COURSES}
+          placeholder="Select your course"
         />
         <PasswordField
           {...fieldProps('password')}

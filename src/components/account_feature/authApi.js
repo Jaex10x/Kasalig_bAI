@@ -2,8 +2,8 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
 
-// NOTE: the login endpoints are not yet implemented in the Spring backend.
-// Update these paths here if the backend uses different routes.
+// Account routes of the Spring backend (StudentController / TeacherController).
+// The server's address comes from VITE_API_BASE_URL; see .env.example.
 export const AUTH_ENDPOINTS = {
   registerStudent: '/api/student/postStudent',
   studentLogin: '/api/student/login',

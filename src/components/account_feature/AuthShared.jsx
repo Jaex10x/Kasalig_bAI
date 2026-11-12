@@ -132,6 +132,43 @@ export function TextField({ id, label, error, className = '', ...inputProps }) {
   );
 }
 
+const ChevronIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
+
+/**
+ * Labeled dropdown, styled like the text inputs and wired for inline errors.
+ * options: list of strings; placeholder: the empty first choice shown until one is picked.
+ */
+export function SelectField({ id, label, error, options, placeholder = 'Select…', ...selectProps }) {
+  const isEmpty = !selectProps.value;
+
+  return (
+    <div className="kb-auth-field">
+      <label htmlFor={id} className="kb-auth-label">{label}</label>
+      <div className="kb-auth-select">
+        <select
+          id={id}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${id}-error` : undefined}
+          className={`kb-auth-input${error ? ' has-error' : ''}${isEmpty ? ' is-placeholder' : ''}`}
+          {...selectProps}
+        >
+          <option value="" disabled>{placeholder}</option>
+          {options.map((option) => (
+            <option key={option} value={option}>{option}</option>
+          ))}
+        </select>
+        <span className="kb-auth-select-icon"><ChevronIcon /></span>
+      </div>
+      <FieldError id={id} message={error} />
+    </div>
+  );
+}
+
 /** Password field with a show/hide toggle. */
 export function PasswordField({ id, label = 'Password', error, disabled, ...inputProps }) {
   const [visible, setVisible] = useState(false);
