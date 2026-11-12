@@ -15,5 +15,9 @@ public interface StudentRepository extends JpaRepository<StudentEntity, Integer>
     Optional<StudentEntity> findByStudentIdAndTeacherTeacherId(Integer studentId, Integer teacherId);
 
     boolean existsByEmailIgnoreCase(String email);
+
+    /** The account a login id belongs to. "First" keeps login working even if old data holds duplicates. */
+    Optional<StudentEntity> findFirstByEmailIgnoreCaseOrderByStudentIdAsc(String email);
+
     long countByTeacherTeacherId(Integer teacherId);
 }

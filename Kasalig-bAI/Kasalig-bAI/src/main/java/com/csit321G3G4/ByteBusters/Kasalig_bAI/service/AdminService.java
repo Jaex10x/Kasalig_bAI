@@ -30,6 +30,9 @@ public class AdminService {
     @Autowired
     private CourseRepository courseRepository;
 
+    @Autowired
+    private PasswordHasher passwordHasher;
+
     public AdminEntity getAdmin(int adminId) {
         return adminRepository.findById(adminId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Admin " + adminId + " not found"));
@@ -51,6 +54,7 @@ public class AdminService {
         }
         TeacherEntity teacher = new TeacherEntity(body.getFullName(), body.getEmail());
         teacher.setAdmin(findAdmin(body.getAdmin()));
+        teacher.setPasswordHash(passwordHasher.hashIfProvided(body.getPassword()));
         return teacherRepository.save(teacher);
     }
 
@@ -105,6 +109,7 @@ public class AdminService {
                 body.getYearLevel(),
                 findTeacher(body.getTeacher())
         );
+        student.setPasswordHash(passwordHasher.hashIfProvided(body.getPassword()));
         return studentRepository.save(student);
     }
 

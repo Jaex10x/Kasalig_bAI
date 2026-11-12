@@ -3,6 +3,8 @@ package com.csit321G3G4.ByteBusters.Kasalig_bAI.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import com.csit321G3G4.ByteBusters.Kasalig_bAI.dto.AuthUser;
+import com.csit321G3G4.ByteBusters.Kasalig_bAI.dto.LoginRequest;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.StudentEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.TeacherEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.service.TeacherService;
@@ -20,6 +22,13 @@ public class TeacherController {
     public TeacherEntity postTeacher(@RequestBody TeacherEntity body) {
         return teacherService.postTeacher(body);
     }
+
+    /** Body is { email, password }. Answers 401 when the credentials are wrong. */
+    @PostMapping("/login")
+    public AuthUser login(@RequestBody LoginRequest request) {
+        return teacherService.login(request);
+    }
+
     @GetMapping("/{teacherId}")
     public TeacherEntity getMyAccount(@PathVariable Integer teacherId) {
         return teacherService.getMyAccount(teacherId);
