@@ -463,6 +463,15 @@
   user-select: none;
 }
 
+/* The card's contents. The demo "camera" zooms in on a worked problem by
+   scaling this up from the top-left corner (QuizDemo sets the transform inline);
+   the frame's overflow crops whatever leaves the view. */
+.quiz-card-scene {
+  position: relative;
+  transform-origin: 0 0;
+  transition: transform 0.75s cubic-bezier(0.3, 0, 0.2, 1);
+}
+
 /* Animated Simulated Mouse Pointer */
 .animated-mouse-pointer {
   position: absolute;
