@@ -20,9 +20,9 @@ import { Fireworks } from './Fireworks';
  *  - 'choice': multiple choice. The prompt reads `{before} ____ {after}` and the
  *    blank fills in with the correct option. `decoyIndex` is the wrong option
  *    the cursor hovers first, before settling on `answerIndex`.
- *  - 'solve': a worked problem. Each entry in `steps` is typed out line by line
- *    in the solution pad under the question (the last step is the answer), then
- *    the cursor clicks "Check answer".
+ *  - 'solve': a worked problem. Each entry in `steps` is typed out, one line at
+ *    a time, in the blank writing space under the question (the last step is
+ *    the answer), then the cursor clicks "Check answer".
  * ------------------------------------------------------------------------- */
 const QUESTIONS = [
   {
@@ -38,11 +38,7 @@ const QUESTIONS = [
     id: 'quadratic-roots',
     type: 'solve',
     prompt: 'Solve the quadratic equation x² − 5x + 6 = 0. Show your solution below.',
-    steps: [
-      { text: '(x − 2)(x − 3) = 0', note: 'Factor' },
-      { text: 'x − 2 = 0 or x − 3 = 0', note: 'Zero-product rule' },
-      { text: 'x = 2 or x = 3', note: 'Solve each factor' },
-    ],
+    steps: ['(x − 2)(x − 3) = 0', 'x − 2 = 0 or x − 3 = 0', 'x = 2 or x = 3'],
   },
 ];
 const OPTION_KEYS = ['A', 'B', 'C', 'D'];
@@ -70,7 +66,7 @@ const SPARKLE_END_AFTER = 2200;
 const NEXT_QUESTION_AFTER = 2800;
 
 const typingDuration = (q) =>
-  q.steps.reduce((ms, step) => ms + step.text.length * TYPE_MS + LINE_PAUSE_MS, 0);
+  q.steps.reduce((ms, step) => ms + step.length * TYPE_MS + LINE_PAUSE_MS, 0);
 const clickTime = (q) =>
   q.type === 'solve' ? TYPE_START_AT + typingDuration(q) + CLICK_CHECK_AFTER : CHOICE_CLICK_AT;
 const questionDuration = (q) => clickTime(q) + NEXT_QUESTION_AFTER;
@@ -143,10 +139,10 @@ export const QuizDemo = () => {
 
         let t = TYPE_START_AT;
         q.steps.forEach((step, line) => {
-          for (let chars = 1; chars <= step.text.length; chars++) {
+          for (let chars = 1; chars <= step.length; chars++) {
             at(t + chars * TYPE_MS, () => setTyped({ line, chars }));
           }
-          t += step.text.length * TYPE_MS + LINE_PAUSE_MS;
+          t += step.length * TYPE_MS + LINE_PAUSE_MS;
           at(t, () => setTyped({ line: line + 1, chars: 0 }));
         });
 
@@ -359,30 +355,24 @@ export const QuizDemo = () => {
                     isAnswered ? 'is-solved' : ''
                   }`}
                 >
-                  <div className="solve-pad-title">Your solution</div>
+                  {/* A plain white writing space: the working appears line by line */}
                   {q.steps.map((step, line) => {
                     const isDone = typed.line > line;
                     const isCurrent = typed.line === line;
-                    const text = isDone ? step.text : isCurrent ? step.text.slice(0, typed.chars) : '';
+                    const text = isDone ? step : isCurrent ? step.slice(0, typed.chars) : '';
                     const isAnswerLine = isAnswered && line === lastLine;
 
                     return (
-                      <div
-                        key={step.text}
-                        className={`solve-line ${isDone ? 'is-done' : ''} ${isAnswerLine ? 'is-answer' : ''}`}
-                      >
-                        <span className="solve-line-number">{line + 1}</span>
+                      <div key={step} className={`solve-line ${isAnswerLine ? 'is-answer' : ''}`}>
                         <span className="solve-line-text">
                           {text}
                           {isCurrent && <span className="solve-caret"></span>}
                         </span>
-                        {isAnswerLine ? (
+                        {isAnswerLine && (
                           <span className="option-result-badge is-correct">
                             <CheckIcon size={13} color="#047857" />
                             <span>Target Gap Solved</span>
                           </span>
-                        ) : (
-                          <span className="solve-line-note">{step.note}</span>
                         )}
                       </div>
                     );
@@ -427,12 +417,12 @@ export const QuizDemo = () => {
         </div>
 
         {/* Bottom Helpers (Hint & Reveal Explanation) + Check answer for worked problems */}
-        <div className="quiz-bottom-actions">
+        <div className={`quiz-bottom-actions ${isSolveQuestion ? 'is-solve' : ''}`}>
           <span className="quiz-btn-aux">
             <KeyIcon size={16} color="#C2672D" />
             <span>Hint</span>
           </span>
-          <span className="quiz-btn-aux">
+          <span className="quiz-btn-aux quiz-btn-explain">
             <BookOpenIcon size={16} color="#64748B" />
             <span>Reveal Explanation</span>
           </span>

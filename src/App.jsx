@@ -1,31 +1,38 @@
-import { useState } from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
-import { StudentLogin, TeacherLogin } from './components/account_feature/Login';
-import Registration from './components/account_feature/Registration';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import EditAccountPage from './pages/EditAccountPage';
+import DashboardPage from './pages/DashboardPage';
+import ProtectedRoute from './components/ProtectedRoute';
+import useAppNavigate from './hooks/useAppNavigate';
 
-// Aliases so generic triggers (e.g. the navbar "Login" button) land on a real page.
-const PAGE_ALIASES = {
-  login: 'student-login',
-};
+// The landing page still talks in "page names"; useAppNavigate maps them to URLs.
+function LandingRoute() {
+  const goTo = useAppNavigate();
+  return <LandingPage onNavigate={goTo} />;
+}
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('landing');
+  return (
+    <Routes>
+      <Route path="/" element={<LandingRoute />} />
+      {/* The keys give each login page its own form, so nothing typed carries over between them. */}
+      <Route path="/login" element={<LoginPage key="student" role="student" />} />
+      <Route path="/teacher-login" element={<LoginPage key="teacher" role="teacher" />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-  const handleNavigate = (page) => {
-    setCurrentPage(PAGE_ALIASES[page] ?? page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+      {/* Signed-in users only; everyone else is sent to /login. */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/account/edit" element={<EditAccountPage />} />
+      </Route>
 
-  switch (currentPage) {
-    case 'student-login':
-      return <StudentLogin onNavigate={handleNavigate} />;
-    case 'teacher-login':
-      return <TeacherLogin onNavigate={handleNavigate} />;
-    case 'register':
-      return <Registration onNavigate={handleNavigate} />;
-    default:
-      return <LandingPage onNavigate={handleNavigate} />;
-  }
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }
 
 export default App;

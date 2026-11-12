@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 // The existing components call onNavigate('<page-name>'); this maps names to URLs.
 const PAGE_PATHS = {
-  landing: '/landing',
+  landing: '/',
   login: '/login',
   'student-login': '/login',
   'teacher-login': '/teacher-login',

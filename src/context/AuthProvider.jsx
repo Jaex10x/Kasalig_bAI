@@ -1,125 +1,114 @@
 import { useState } from 'react';
 import { AuthContext } from './AuthContext';
+import { ApiError, AUTH_ENDPOINTS, postJson } from '../components/account_feature/authApi';
 
-// MOCK AUTH ONLY. Passwords are stored in plain text in localStorage.
-// Replace login/register/updateUser with real API calls when the backend is ready.
-const USERS_KEY = 'kb_mock_users';
-const SESSION_KEY = 'kb_mock_session';
+// The signed-in user's public profile ({ id, role, fullName, email, course }) is kept in
+// localStorage so a page refresh does not log them out. No password is ever stored here.
+const SESSION_KEY = 'kb_session_user';
 
-const SEED_USERS = [
-  {
-    id: 1,
-    fullName: 'Test Student',
-    email: 'student@cit.edu',
-    course: 'BS Information Technology',
-    role: 'student',
-    password: 'password123',
-  },
-  {
-    id: 2,
-    fullName: 'Test Teacher',
-    email: 'teacher@cit.edu',
-    role: 'teacher',
-    password: 'password123',
-  },
-];
+// Left behind by the old browser-only mock auth, which kept passwords in plain text.
+const LEGACY_MOCK_KEYS = ['kb_mock_users', 'kb_mock_session'];
 
-function readStorage(key, fallback) {
+// Only these fields are kept, whatever else a response carries.
+const toSessionUser = ({ id, role, fullName, email, course }) => ({
+  id,
+  role,
+  fullName,
+  email,
+  course: course ?? null,
+});
+
+function readSession() {
   try {
-    const raw = window.localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
+    LEGACY_MOCK_KEYS.forEach((key) => window.localStorage.removeItem(key));
+    const saved = JSON.parse(window.localStorage.getItem(SESSION_KEY));
+    const isValid =
+      saved &&
+      Number.isInteger(saved.id) &&
+      (saved.role === 'student' || saved.role === 'teacher') &&
+      typeof saved.fullName === 'string' &&
+      typeof saved.email === 'string';
+    return isValid ? toSessionUser(saved) : null;
   } catch {
-    return fallback;
+    return null;
   }
 }
 
-function writeStorage(key, value) {
+function writeSession(user) {
   try {
-    if (value === null) window.localStorage.removeItem(key);
-    else window.localStorage.setItem(key, JSON.stringify(value));
+    if (user) window.localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+    else window.localStorage.removeItem(SESSION_KEY);
   } catch {
-    // Storage unavailable (private mode, quota): state still works for this session.
+    // Storage unavailable (private mode, quota): the session still works until the tab closes.
   }
 }
-
-const sameEmail = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
-
-// Never expose the password to the rest of the app.
-const toPublicUser = (record) =>
-  record
-    ? {
-        id: record.id,
-        fullName: record.fullName,
-        email: record.email,
-        course: record.course,
-        role: record.role,
-      }
-    : null;
 
 export default function AuthProvider({ children }) {
-  const [users, setUsers] = useState(() => readStorage(USERS_KEY, SEED_USERS));
-  const [sessionId, setSessionId] = useState(() => readStorage(SESSION_KEY, null));
+  const [user, setUser] = useState(readSession);
 
-  const saveUsers = (next) => {
-    setUsers(next);
-    writeStorage(USERS_KEY, next);
-  };
-
-  const record = users.find((u) => u.id === sessionId);
-  const user = toPublicUser(record);
-
-  /** login({ email, password, role? }) -> { ok, user } | { ok: false, error } */
-  const login = ({ email, password, role }) => {
-    const match = users.find((u) => sameEmail(u.email, email));
-    // One generic message so we never reveal which credential was wrong.
-    if (!match || match.password !== password || (role && match.role !== role)) {
-      return { ok: false, error: 'Incorrect email or password.' };
+  /**
+   * login({ email, password, role }) -> { ok: true, user } | { ok: false, error }
+   * Wrong credentials come back as ok: false. If the server cannot be reached or fails,
+   * the ApiError is thrown so the form can tell the two apart.
+   */
+  const login = async ({ email, password, role = 'student' }) => {
+    const endpoint = role === 'teacher' ? AUTH_ENDPOINTS.teacherLogin : AUTH_ENDPOINTS.studentLogin;
+    let account;
+    try {
+      account = await postJson(endpoint, { email, password });
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        return { ok: false, error: 'Incorrect email or password.' };
+      }
+      throw err;
     }
-    setSessionId(match.id);
-    writeStorage(SESSION_KEY, match.id);
-    return { ok: true, user: toPublicUser(match) };
+    if (!account?.id) {
+      throw new ApiError('The server sent an unexpected response. Please try again.', 502);
+    }
+    const signedIn = toSessionUser(account);
+    setUser(signedIn);
+    writeSession(signedIn);
+    return { ok: true, user: signedIn };
   };
 
   const logout = () => {
-    setSessionId(null);
-    writeStorage(SESSION_KEY, null);
+    setUser(null);
+    writeSession(null);
   };
 
-  /** register({ fullName, email, course, password }) -> { ok, user } | { ok: false, error } */
-  const register = ({ fullName, email, course, password }) => {
-    if (users.some((u) => sameEmail(u.email, email))) {
-      return { ok: false, error: 'An account with that email already exists.' };
+  /**
+   * register({ fullName, email, course, password }) -> { ok: true, user } | { ok: false, error }
+   * Creates a student account. It does not sign the student in; they log in afterwards.
+   */
+  const register = async ({ fullName, email, course, password }) => {
+    try {
+      const student = await postJson(AUTH_ENDPOINTS.registerStudent, {
+        fullName,
+        email,
+        course,
+        password,
+      });
+      return {
+        ok: true,
+        user: toSessionUser({ ...student, id: student?.studentId, role: 'student' }),
+      };
+    } catch (err) {
+      // 4xx: the server refused the sign-up and says why (e.g. the email is already registered).
+      if (err instanceof ApiError && err.status >= 400 && err.status < 500) {
+        return { ok: false, error: err.message };
+      }
+      throw err;
     }
-    const newUser = {
-      id: users.reduce((max, u) => Math.max(max, u.id), 0) + 1,
-      fullName,
-      email,
-      course,
-      role: 'student',
-      password,
-    };
-    saveUsers([...users, newUser]);
-    return { ok: true, user: toPublicUser(newUser) };
   };
 
-  /** updateUser({ fullName?, email?, course? }) -> { ok, user } | { ok: false, error } */
-  const updateUser = (changes) => {
-    if (!record) return { ok: false, error: 'You must be logged in.' };
-    if (
-      changes.email &&
-      users.some((u) => u.id !== record.id && sameEmail(u.email, changes.email))
-    ) {
-      return { ok: false, error: 'That email is already in use.' };
-    }
-    const updated = {
-      ...record,
-      ...(changes.fullName !== undefined && { fullName: changes.fullName }),
-      ...(changes.email !== undefined && { email: changes.email }),
-      ...(changes.course !== undefined && { course: changes.course }),
-    };
-    saveUsers(users.map((u) => (u.id === record.id ? updated : u)));
-    return { ok: true, user: toPublicUser(updated) };
-  };
+  /**
+   * Not connected yet: the backend has no way to know who is calling, so it cannot safely let
+   * a user change their own account. Fails honestly instead of pretending to save.
+   */
+  const updateUser = async () => ({
+    ok: false,
+    error: 'Saving account changes is not connected to the server yet.',
+  });
 
   const value = {
     isAuthenticated: Boolean(user),

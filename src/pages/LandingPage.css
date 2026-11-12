@@ -37,7 +37,10 @@
 
 .kasalig-navbar-capsule {
   pointer-events: auto;
-  max-width: 1140px;
+  /* Hug the content instead of stretching: the pill is only as wide as the
+     logo + links need, and stays centred. */
+  width: fit-content;
+  max-width: 100%;
   margin: 0 auto;
   background-color: #ffffff;
   border-radius: 9999px;
@@ -45,6 +48,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 56px; /* space between the logo and the links */
   border: 1px solid rgba(230, 222, 211, 0.95);
   box-shadow: 0 10px 30px -4px rgba(50, 25, 10, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
   transition: all 0.25s ease;
@@ -843,15 +847,17 @@
   100% { transform: scale(1); opacity: 1; }
 }
 
-/* Solution pad: a worked problem is typed out here, line by line */
+/* Solution pad: a plain white writing space under the question. The worked
+   solution is typed into it freely, line by line — no numbering, no rules. */
 .quiz-solve-pad {
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
   background-color: #ffffff;
   border: 1.5px solid #ebd9c8;
   border-radius: 16px;
   box-shadow: 0 3px 0 #f1e4d6;
-  padding: 14px 16px 10px;
+  padding: 14px 24px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -860,46 +866,15 @@
   box-shadow: 0 4px 0 #a7f3d0, 0 0 0 4px rgba(16, 185, 129, 0.14);
 }
 
-.solve-pad-title {
-  font-size: 11.5px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  color: #9a6538;
-  text-transform: uppercase;
-  padding: 0 8px;
-  margin-bottom: 6px;
-}
-
 .solve-line {
   display: flex;
   align-items: center;
   gap: 14px;
   min-height: 40px;
-  padding: 0 8px;
-  border-bottom: 1px dashed #f0dfcd;
-  border-radius: 10px;
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 600;
   color: #1e293b;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.solve-line:last-child {
-  border-bottom-color: transparent;
-}
-
-.solve-line-number {
-  flex: none;
-  width: 26px;
-  height: 26px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  background-color: #fbf1e6;
-  color: #c2672d;
-  font-size: 12.5px;
-  font-weight: 800;
+  transition: color 0.2s ease;
 }
 
 .solve-line-text {
@@ -924,30 +899,10 @@
   56%, 100% { opacity: 0; }
 }
 
-/* What was done on that line; appears once the line is finished */
-.solve-line-note {
-  flex: none;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #94a3b8;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.solve-line.is-done .solve-line-note {
-  opacity: 1;
-}
-
+/* The final answer, once it has been checked */
 .solve-line.is-answer {
-  background-color: #ecfdf5;
-  border-bottom-color: transparent;
   color: #047857;
   font-weight: 800;
-}
-
-.solve-line.is-answer .solve-line-number {
-  background-color: #10b981;
-  color: #ffffff;
 }
 
 /* Bottom Action Buttons */
@@ -1061,19 +1016,45 @@
     min-height: 60px;
     font-size: 15.5px;
   }
+  .quiz-solve-pad {
+    padding: 12px 18px;
+  }
   .solve-line {
     gap: 10px;
-    font-size: 15.5px;
+    font-size: 16px;
   }
-  .solve-line-note {
+  /* Icon-only badge here, so it never covers the answer on a narrow line */
+  .solve-line .option-result-badge {
+    padding: 6px;
+  }
+  .solve-line .option-result-badge span {
     display: none;
   }
-  .quiz-check-button {
-    min-width: 0;
-    padding: 10px 18px;
+  /* "+100" pops above the XP chip here: there is no room beside it */
+  .xp-pop-sparkle {
+    top: -24px;
+    left: auto;
+    right: -2px;
+    padding: 1px 8px;
+    border-radius: 9999px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 6px rgba(50, 25, 10, 0.14);
   }
   .quiz-bottom-actions {
+    position: relative;
     padding: 0 16px 8px;
+  }
+  /* Worked problems: "Check answer" takes the place of the second helper pill,
+     so the row stays one line tall on every question. */
+  .quiz-bottom-actions.is-solve .quiz-btn-explain {
+    visibility: hidden;
+  }
+  .quiz-check-button {
+    position: absolute;
+    top: 0;
+    right: 16px;
+    min-width: 0;
+    padding: 10px 18px;
   }
 }
 
@@ -2225,6 +2206,10 @@
   }
   .kasalig-nav-cluster {
     display: none;
+  }
+  /* Small screens: full-width bar again, logo left and menu button right */
+  .kasalig-navbar-capsule {
+    width: auto;
   }
   .kasalig-mobile-toggle {
     display: flex;

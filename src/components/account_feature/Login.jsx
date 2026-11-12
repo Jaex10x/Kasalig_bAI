@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { AUTH_ENDPOINTS, EMAIL_PATTERN, STUDENT_ID_PATTERN, postJson } from './authApi';
 import { AuthLayout, FormAlert, NavLink, PasswordField, TextField } from './AuthShared';
-import Capybara from '../capybaraStyle/Capybara';
+import PokeableCapybara from '../capybaraStyle/PokeableCapybara';
+import { pointAtForm } from './pointAtForm';
 
 const ROLE_CONFIG = {
   student: {
@@ -66,12 +67,12 @@ function getCompanionState({ submitting, success, passwordFocused, authFailed, s
 }
 
 /**
- * Login page for students and teachers (mock auth).
+ * Login page for students and teachers.
  *
  * Props:
  *  - role: 'student' (default) | 'teacher'
  *  - onSubmit({ email, password, role }): returns (or resolves to) { ok, user?, error? }.
- *    This is the swap point for the real API call later.
+ *    The app passes AuthProvider's login, which calls the backend.
  *  - onLogin(user, role): called after a successful login.
  *  - onNavigate(page): used for sign-up, forgot-password and footer links.
  *  - flash: optional { type: 'success' | 'error', message } shown above the form.
@@ -131,7 +132,7 @@ export default function Login({ role = 'student', onSubmit, onLogin, onNavigate,
     try {
       let user;
       if (onSubmit) {
-        // Auth from AuthProvider (mock for now): returns { ok, user } | { ok: false, error }.
+        // AuthProvider's login: { ok, user } | { ok: false, error }; throws if the server fails.
         const result = await onSubmit(credentials);
         if (!result?.ok) {
           setAuthFailed(true);
@@ -190,7 +191,9 @@ export default function Login({ role = 'student', onSubmit, onLogin, onNavigate,
       title={config.title}
       footerLinks={config.footerLinks}
       onNavigate={onNavigate}
-      companion={<Capybara mood={companion.mood} message={companion.message} />}
+      companion={
+        <PokeableCapybara mood={companion.mood} message={companion.message} pointer={pointAtForm} />
+      }
     >
       <form className="kb-auth-form" onSubmit={handleSubmit} noValidate>
         {flash && <FormAlert type={flash.type}>{flash.message}</FormAlert>}

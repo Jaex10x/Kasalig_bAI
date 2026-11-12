@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { EMAIL_PATTERN, STUDENT_ID_PATTERN } from './authApi';
-import { AuthLayout, FormAlert, TextField } from './AuthShared';
+import { AuthLayout, FormAlert, SelectField, TextField } from './AuthShared';
+import { COURSES } from './courses';
 import './AccountExtras.css';
 
 const FOOTER_LINKS = [{ label: 'Back to dashboard', page: 'dashboard' }];
@@ -22,7 +23,7 @@ function validate(form, isStudent) {
   }
 
   if (isStudent && !form.course.trim()) {
-    errors.course = 'Please enter your course.';
+    errors.course = 'Please select your course.';
   }
 
   return errors;
@@ -39,6 +40,9 @@ function validate(form, isStudent) {
  */
 export default function EditAccount({ user, onSubmit, onCancel, onNavigate }) {
   const isStudent = user.role !== 'teacher';
+  // Keep a course saved before the dropdown existed selectable, even if it is not in the list.
+  const courseOptions =
+    !user.course || COURSES.includes(user.course) ? COURSES : [user.course, ...COURSES];
 
   const [form, setForm] = useState({
     fullName: user.fullName ?? '',
@@ -137,12 +141,11 @@ export default function EditAccount({ user, onSubmit, onCancel, onNavigate }) {
           placeholder="2024-01530@cit.edu"
         />
         {isStudent && (
-          <TextField
+          <SelectField
             {...fieldProps('course')}
             label="Course"
-            type="text"
-            autoComplete="off"
-            placeholder="BS Information Technology"
+            options={courseOptions}
+            placeholder="Select your course"
           />
         )}
 

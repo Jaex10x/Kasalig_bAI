@@ -74,7 +74,7 @@ export const Navbar = ({ onNavigate }) => {
             <button 
               type="button" 
               className="kasalig-btn-login"
-              onClick={() => onNavigate && onNavigate('get-started')}
+              onClick={() => onNavigate && onNavigate('register')}
             >
               Sign up
             </button>
@@ -118,7 +118,7 @@ export const Navbar = ({ onNavigate }) => {
             <button 
               type="button" 
               className="kasalig-btn-login"
-              onClick={() => { setMobileMenuOpen(false); onNavigate && onNavigate('get-started'); }}
+              onClick={() => { setMobileMenuOpen(false); onNavigate && onNavigate('register'); }}
             >
               Sign up
             </button>

@@ -7,7 +7,7 @@ import './Capybara.css';
  * accessibly by the form itself (inline errors / alerts).
  *
  * Props:
- *  - mood: 'idle' | 'eyes-closed' | 'sad' | 'pout' | 'happy' | 'thinking'
+ *  - mood: 'idle' | 'eyes-closed' | 'sad' | 'pout' | 'happy' | 'laugh' | 'thinking'
  *  - message: text shown in the speech bubble
  */
 export default function Capybara({ mood = 'idle', message }) {
@@ -98,6 +98,16 @@ export default function Capybara({ mood = 'idle', message }) {
               <path d="M160 116 q8 -2 13 -7" />
               <path d="M162 124 q9 0 15 -3" />
             </g>
+          </g>
+
+          {/* laugh bits: little "ha ha" marks on both sides of the head */}
+          <g className="kb-capy-laugh-bits" fill="none" stroke="#de7a40" strokeWidth="3" strokeLinecap="round">
+            <path d="M42 58 L33 51" />
+            <path d="M39 74 L28 74" />
+            <path d="M42 90 L33 97" />
+            <path d="M178 58 L187 51" />
+            <path d="M181 74 L192 74" />
+            <path d="M178 90 L187 97" />
           </g>
 
           {/* mouths */}
