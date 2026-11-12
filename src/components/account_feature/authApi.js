@@ -8,6 +8,10 @@ export const AUTH_ENDPOINTS = {
   registerStudent: '/api/student/postStudent',
   studentLogin: '/api/student/login',
   teacherLogin: '/api/teacher/login',
+  // Needs the login token: who the token belongs to (used to check a saved session on page load).
+  me: '/api/auth/me',
+  updateStudent: (id) => `/api/student/updateStudent?studentId=${encodeURIComponent(id)}`,
+  updateTeacher: (id) => `/api/teacher/updateTeacher?teacherId=${encodeURIComponent(id)}`,
 };
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -32,16 +36,21 @@ async function readErrorMessage(response) {
 }
 
 /**
- * POST a JSON body and return the parsed JSON response (or null for empty bodies).
+ * Send a request and return the parsed JSON response (or null for empty bodies).
+ * With a token, sends "Authorization: Bearer <token>" so the backend knows who is calling.
  * Throws ApiError with a user-friendly message on network or HTTP failure.
  */
-export async function postJson(path, body) {
+export async function requestJson(method, path, { body, token } = {}) {
+  const headers = {};
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (token) headers.Authorization = `Bearer ${token}`;
+
   let response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
     throw new ApiError(
@@ -60,3 +69,6 @@ export async function postJson(path, body) {
 
   return response.json().catch(() => null);
 }
+
+/** POST a JSON body. Sign-up and login need no token; pass one for anything else. */
+export const postJson = (path, body, token) => requestJson('POST', path, { body, token });
