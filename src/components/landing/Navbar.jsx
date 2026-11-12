@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { LogoIcon, GamepadIcon, ChevronDownIcon } from './Icons';
+import { useState } from 'react';
+import { LogoIcon } from './Icons';
 
 export const Navbar = ({ onNavigate }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -7,7 +7,7 @@ export const Navbar = ({ onNavigate }) => {
 
   const navLinks = [
     { name: 'How It Works', href: '#how-it-works' },
-    { name: 'Explore', href: '#features', hasDropdown: true },
+    { name: 'Explore', href: '#features' },
     { name: 'Features', href: '#features' },
     { name: 'For Teachers', href: '#features' },
   ];
@@ -57,13 +57,12 @@ export const Navbar = ({ onNavigate }) => {
                   onClick={(e) => handleLinkClick(link.name, link.href, e)}
                 >
                   <span>{link.name}</span>
-                  {link.hasDropdown && <ChevronDownIcon size={12} color="#64748B" />}
                 </a>
               );
             })}
           </div>
 
-          {/* Actions: Login & Start Learning Pill */}
+          {/* Actions: Login & Sign up */}
           <div className="kasalig-nav-actions">
             <button 
               type="button" 
@@ -74,11 +73,10 @@ export const Navbar = ({ onNavigate }) => {
             </button>
             <button 
               type="button" 
-              className="kasalig-btn-capsule-dark"
-              onClick={() => onNavigate && onNavigate('get-started')}
+              className="kasalig-btn-login"
+              onClick={() => onNavigate && onNavigate('register')}
             >
-              <GamepadIcon size={16} color="#FFFFFF" />
-              <span>Start learning</span>
+              Sign up
             </button>
           </div>
         </div>
@@ -119,11 +117,10 @@ export const Navbar = ({ onNavigate }) => {
             </button>
             <button 
               type="button" 
-              className="kasalig-btn-capsule-dark"
-              onClick={() => { setMobileMenuOpen(false); onNavigate && onNavigate('get-started'); }}
+              className="kasalig-btn-login"
+              onClick={() => { setMobileMenuOpen(false); onNavigate && onNavigate('register'); }}
             >
-              <GamepadIcon size={16} color="#FFFFFF" />
-              <span>Start learning</span>
+              Sign up
             </button>
           </div>
         </div>

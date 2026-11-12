@@ -2,59 +2,57 @@ package com.csit321G3G4.ByteBusters.Kasalig_bAI.service;
 
 import java.util.List;
 import java.util.NoSuchElementException;
-import org.springframework.beans.factory.annotation.Autowired; 
+import java.util.regex.Pattern;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.controller.AuthException;
+import com.csit321G3G4.ByteBusters.Kasalig_bAI.dto.AuthUser;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.StudentEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.repository.StudentRepository;
-import jakarta.persistence.EntityNotFoundException;
 
+/** STUDENT: sign up, log in, and account CRUD. */
 @Service
 public class StudentService {
-    
-    private static final List<String> COLLEGE_YEARS = List.of("1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year");
+
+    /** Same rule as STUDENT_ID_PATTERN in the frontend's authApi.js, e.g. 2024-01530. */
+    private static final Pattern STUDENT_ID = Pattern.compile("^\\d{2,4}-\\d{3,6}(-\\d{1,4})?$");
 
     @Autowired
     private StudentRepository srepo;
 
     @Autowired
-    private PasswordEncoder encoder;
+    private PasswordHasher passwordHasher;
+
     // CREATE (sign up)
-    public StudentEntity postStudent(StudentEntity student) {
-        String email = normalize(student.getEmail());
-        if(email.isEmpty() || isBlank(student.getPassword())) {
-            throw new AuthException(HttpStatus.BAD_REQUEST, "Email and password cannot be empty.");
+    // Always creates a new account from the request. Anything else in the body, such as an id or
+    // a teacher, is ignored, so this endpoint cannot be used to overwrite an existing account.
+    public StudentEntity postStudent(StudentEntity body) {
+        String fullName = body.getFullName() == null ? "" : body.getFullName().trim();
+        String email = normalize(body.getEmail());
+        if (fullName.isEmpty() || email.isEmpty() || isBlank(body.getPassword())) {
+            throw new AuthException(HttpStatus.BAD_REQUEST, "Full name, email and password cannot be empty.");
         }
-
-        if (!email.matches("^[^@\\s]+@[^@\\s]+\\.edu(\\.[a-z]{2})?$")) {
-            throw new AuthException(HttpStatus.BAD_REQUEST, "Please use your school email (e.g. student@school.edu or student@school.edu.ph).");
+        if (!Require.isEmail(email) && !STUDENT_ID.matcher(email).matches()) {
+            throw new AuthException(HttpStatus.BAD_REQUEST, "Enter a valid email or student ID.");
         }
-        
-        if (!COLLEGE_YEARS.contains(student.getGradeLevel())) {
-            throw new AuthException(HttpStatus.BAD_REQUEST, "Sign-up is open to college students only. Please choose a year level from 1st to 5th Year.");
+        if (srepo.existsByEmailIgnoreCase(email)) {
+            throw new AuthException(HttpStatus.CONFLICT, "An account with that email or student ID already exists.");
         }
-
-        if (srepo.findByEmail(email) != null) {
-            throw new AuthException(HttpStatus.BAD_REQUEST, "Email is already in use.");
-        }
-        student.setEmail(email);
-        student.setPassword(encoder.encode(student.getPassword()));
+        StudentEntity student = new StudentEntity(fullName, email, body.getYearLevel(), null);
+        student.setCourse(isBlank(body.getCourse()) ? null : body.getCourse().trim());
+        student.setPasswordHash(passwordHasher.hash(body.getPassword()));
         return srepo.save(student);
     }
-    //LOGIN
-    public StudentEntity login(String email, String password){
-        StudentEntity student = srepo.findByEmail(normalize(email));
-        if(student == null || !PasswordUtil.matches(encoder, password, student.getPassword())){
+
+    // LOGIN: every failure gets the same answer, so the response never reveals whether the account exists.
+    public AuthUser login(String email, String password) {
+        StudentEntity student = srepo.findFirstByEmailIgnoreCaseOrderByStudentIdAsc(normalize(email)).orElse(null);
+        if (student == null || !passwordHasher.matches(password, student.getPasswordHash())) {
             throw new AuthException(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
         }
-
-        if(!PasswordUtil.isHashed(student.getPassword())){
-            student.setPassword(encoder.encode(password));
-            srepo.save(student);
-        }
-        return student;
+        return new AuthUser(student.getStudentId(), "student", student.getFullName(), student.getEmail(),
+                student.getCourse());
     }
 
     // READ ALL
@@ -68,17 +66,28 @@ public class StudentService {
                 .orElseThrow(() -> new NoSuchElementException("Student " + id + " does not exist."));
     }
 
+    // A student reads their own account
+    public StudentEntity getMyAccount(int studentId) {
+        return getStudentById(studentId);
+    }
+
     // UPDATE
-    public StudentEntity updateStudent(int studentID, StudentEntity newDetails) {
-        StudentEntity student = srepo.findById(studentID).orElseThrow(() -> new EntityNotFoundException("Student does not exist!"));
-        student.setFirstName(newDetails.getFirstName());
-        student.setLastName(newDetails.getLastName());
-        student.setEmail(newDetails.getEmail());
-        if(!isBlank(newDetails.getPassword())) {
-            student.setPassword(encoder.encode(newDetails.getPassword()));
+    public StudentEntity updateStudent(int studentId, StudentEntity newDetails) {
+        StudentEntity student = getStudentById(studentId);
+        String email = normalize(newDetails.getEmail());
+        if (email.isEmpty()) {
+            throw new AuthException(HttpStatus.BAD_REQUEST, "Email cannot be empty.");
         }
-        student.setGradeLevel(newDetails.getGradeLevel());
-        student.setSchool(newDetails.getSchool());
+        if (!email.equalsIgnoreCase(student.getEmail()) && srepo.existsByEmailIgnoreCase(email)) {
+            throw new AuthException(HttpStatus.CONFLICT, "Email is already in use.");
+        }
+        student.setFullName(newDetails.getFullName());
+        student.setEmail(email);
+        student.setYearLevel(newDetails.getYearLevel());
+        student.setCourse(newDetails.getCourse());
+        if (!isBlank(newDetails.getPassword())) {
+            student.setPasswordHash(passwordHasher.hash(newDetails.getPassword()));
+        }
         return srepo.save(student);
     }
 
@@ -87,7 +96,6 @@ public class StudentService {
         srepo.delete(getStudentById(studentId));
         return "Student with ID " + studentId + " has been successfully deleted.";
     }
-       
 
     private static String normalize(String email) {
         return email == null ? "" : email.trim().toLowerCase();

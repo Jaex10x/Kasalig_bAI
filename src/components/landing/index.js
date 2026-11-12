@@ -8,3 +8,4 @@ export { LearningCycleSection } from './LearningCycleSection';
 export { ClassroomSection } from './ClassroomSection';
 export { EasiestWaySection } from './EasiestWaySection';
 export { Footer } from './Footer';
+export { FloatingCapybara } from './FloatingCapybara';

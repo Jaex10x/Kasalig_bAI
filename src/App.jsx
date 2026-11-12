@@ -1,60 +1,37 @@
-import { useState } from 'react';
-import { useAuth } from './context/AuthContext';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
-import StudentLogin from './pages/StudentLogin';
-import TeacherLogin from './pages/TeacherLogin';
-import StudentDashboard from './pages/StudentDashboard';
-import TeacherDashboard from './pages/TeacherDashboard';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import EditAccountPage from './pages/EditAccountPage';
+import DashboardPage from './pages/DashboardPage';
+import ProtectedRoute from './components/ProtectedRoute';
+import useAppNavigate from './hooks/useAppNavigate';
 
-// Navbar buttons use these names; map them to real pages
-const ALIASES = {
-  login: { page: 'student-login', mode: 'login' },
-  'get-started': { page: 'student-login', mode: 'register' },
-};
-
-function App() {
-  const { auth } = useAuth();
-  // If already logged in (saved in the browser), open the dashboard
-  const [currentPage, setCurrentPage] = useState(auth ? `${auth.role}-dashboard` : 'landing');
-  const [authMode, setAuthMode] = useState('login');
-
-  const handleNavigate = (page) => {
-    const alias = ALIASES[page];
-    setAuthMode(alias ? alias.mode : 'login');
-    setCurrentPage(alias ? alias.page : page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // Dashboards require the matching login
-  if (currentPage === 'student-dashboard' || currentPage === 'teacher-dashboard') {
-    const role = currentPage.split('-')[0];
-    if (auth?.role === role) {
-      return role === 'student'
-        ? <StudentDashboard onNavigate={handleNavigate} />
-        : <TeacherDashboard onNavigate={handleNavigate} />;
-    }
-    return <LoginPage role={role} mode="login" onNavigate={handleNavigate} />;
-  }
-
-  if (currentPage === 'student-login' || currentPage === 'teacher-login') {
-    return <LoginPage role={currentPage.split('-')[0]} mode={authMode} onNavigate={handleNavigate} />;
-  }
-
-  return <LandingPage onNavigate={handleNavigate} />;
+// The landing page still talks in "page names"; useAppNavigate maps them to URLs.
+function LandingRoute() {
+  const goTo = useAppNavigate();
+  return <LandingPage onNavigate={goTo} />;
 }
 
-function LoginPage({ role, mode, onNavigate }) {
-  const Form = role === 'student' ? StudentLogin : TeacherLogin;
+function App() {
   return (
-    <div style={{ padding: '24px', textAlign: 'center' }}>
-      <button
-        onClick={() => onNavigate('landing')}
-        style={{ marginBottom: '16px', padding: '8px 16px', cursor: 'pointer' }}
-      >
-        ← Back to Landing Page
-      </button>
-      <Form onNavigate={onNavigate} initialMode={mode} />
-    </div>
+    <Routes>
+      <Route path="/" element={<LandingRoute />} />
+      {/* The keys give each login page its own form, so nothing typed carries over between them. */}
+      <Route path="/login" element={<LoginPage key="student" role="student" />} />
+      <Route path="/teacher-login" element={<LoginPage key="teacher" role="teacher" />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+      {/* Signed-in users only; everyone else is sent to /login. */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/account/edit" element={<EditAccountPage />} />
+      </Route>
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 

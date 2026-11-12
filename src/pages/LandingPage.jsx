@@ -1,4 +1,3 @@
-import React from 'react';
 import './LandingPage.css';
 
 import {
@@ -10,6 +9,7 @@ import {
   ClassroomSection,
   EasiestWaySection,
   Footer,
+  FloatingCapybara,
 } from '../components/landing';
 
 /**
@@ -79,6 +79,9 @@ export const LandingPage = ({ onNavigate }) => {
 
       {/* 8. Dark Modern Footer */}
       <Footer onNavigate={onNavigate} />
+
+      {/* 9. Capybara companion that follows the scroll and says hi */}
+      <FloatingCapybara />
     </div>
   );
 };
