@@ -36,11 +36,10 @@ Update this section to match the technologies actually used in the project.
 
 | Name            | Role                      |
 | --------------- | ------------------------- |
-| [Not yet assigned] | Project Manager           |
-| [Not yet assigned] | Frontend Developer        |
-| [Not yet assigned] | Backend Developer         |
-| [Not yet assigned] | AI Integration            |
-| [Not yet assigned] | Documentation and Testing |
+| Francis Benedict Gaviola & Geoffred Roe Dizon | Frontend Developer |
+| Johnlloyd Encierto | Backend Developer         |
+| Johnlloyd Encierto | AI Integration            |
+| Francis Benedict Gaviola & Geoffred Roe Dizon | Documentation and Testing |
 
 *Replace the sample names and roles with your actual team assignments.*
 
@@ -85,7 +84,7 @@ Update this section to match the technologies actually used in the project.
 
 ## 8. Task Board
 
-**ClickUp Task Board:** [Insert your team's ClickUp URL here]
+**ClickUp Task Board:** https://app.clickup.com/1300410000010502/v/l/li/1300410000067707?pr=1300410000050234
 
 Use the task board to track assigned tasks, deadlines, progress, and team responsibilities.
 
