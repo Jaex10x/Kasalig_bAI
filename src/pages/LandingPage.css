@@ -1340,20 +1340,20 @@
 
 /* Feedback wall: staggered rows of flat cards over an orange mosaic glow */
 .feedback-wall {
-  --fb-card-w: 400px;
-  --fb-card-gap: 20px;
+  --fb-card-w: 320px;
+  --fb-card-gap: 14px;
   position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--fb-card-gap);
-  padding: 48px 0;
+  padding: 28px 0;
   /* Orange band behind the cards, melting into the white section top and bottom */
   background: linear-gradient(
     180deg,
     rgba(236, 154, 95, 0) 0%,
-    var(--fb-orange-light) 48px,
+    var(--fb-orange-light) 28px,
     var(--fb-orange) 50%,
-    var(--fb-orange-deep) calc(100% - 48px),
+    var(--fb-orange-deep) calc(100% - 28px),
     rgba(194, 103, 45, 0) 100%
   );
   /* Fade the cards (and band) out toward the left/right edges */
@@ -1364,10 +1364,10 @@
 /* Pixel-mosaic glow behind the cards (low-res canvas upscaled into square blocks) */
 .feedback-wall-glow {
   position: absolute;
-  top: -48px;
+  top: -28px;
   left: 0;
   width: 100%;
-  height: calc(100% + 96px);
+  height: calc(100% + 56px);
   z-index: 0;
 }
 
@@ -1418,15 +1418,15 @@
 /* Flat card */
 .feedback-card {
   width: var(--fb-card-w);
-  min-height: 258px;
+  min-height: 168px;
   /* margin instead of flex gap keeps both halves the same width for a seamless loop */
   margin-right: var(--fb-card-gap);
   flex-shrink: 0;
   display: flex;
-  gap: 14px;
-  padding: 22px 22px 18px;
+  gap: 12px;
+  padding: 16px 18px 12px;
   background: #ffffff;
-  border-radius: 18px;
+  border-radius: 16px;
   box-shadow:
     0 1px 2px rgba(120, 50, 10, 0.06),
     0 10px 28px -12px rgba(120, 50, 10, 0.28);
@@ -1441,8 +1441,8 @@
 }
 
 .feedback-avatar {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   border-radius: 9999px;
   flex-shrink: 0;
   display: flex;
@@ -1469,10 +1469,10 @@
 
 .feedback-card-text {
   flex: 1;
-  margin: 0 0 16px;
-  font-size: 18px;
+  margin: 0 0 10px;
+  font-size: 15px;
   font-weight: 600;
-  line-height: 1.6;
+  line-height: 1.5;
   color: #1f2937;
   overflow-wrap: anywhere;
 }
@@ -1486,7 +1486,7 @@
 .feedback-card-meta {
   display: inline-flex;
   gap: 10px;
-  font-size: 15px;
+  font-size: 13.5px;
 }
 
 .feedback-card-time {
@@ -1524,7 +1524,7 @@
 }
 
 .like-count {
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 600;
   color: #c2672d;
 }
@@ -1535,17 +1535,17 @@
 
 @media (max-width: 640px) {
   .feedback-wall {
-    --fb-card-w: 300px;
-    --fb-card-gap: 14px;
+    --fb-card-w: 260px;
+    --fb-card-gap: 12px;
   }
 
   .feedback-card {
-    min-height: 210px;
-    padding: 18px;
+    min-height: 150px;
+    padding: 14px;
   }
 
   .feedback-card-text {
-    font-size: 15.5px;
+    font-size: 14px;
   }
 }
 

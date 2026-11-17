@@ -21,16 +21,24 @@ const toSessionUser = ({ id, role, fullName, email, course }) => ({
   course: course ?? null,
 });
 
+const ROLES = ['student', 'teacher', 'admin'];
+
+// Development only: a session that skips the backend, so every dashboard can be previewed
+// without an account (see /preview/:role). Never accepted in a production build.
+const PREVIEW_TOKEN = 'dev-preview';
+const isPreview = (token) => import.meta.env.DEV && token === PREVIEW_TOKEN;
+
 const isValidUser = (user) =>
   Boolean(user) &&
   Number.isInteger(user.id) &&
-  (user.role === 'student' || user.role === 'teacher') &&
+  ROLES.includes(user.role) &&
   typeof user.fullName === 'string' &&
   typeof user.email === 'string';
 
 const isLive = (session) =>
   Boolean(session) &&
   typeof session.token === 'string' &&
+  (session.token !== PREVIEW_TOKEN || import.meta.env.DEV) &&
   typeof session.expiresAt === 'number' &&
   session.expiresAt > Date.now() &&
   isValidUser(session.user);
@@ -85,7 +93,7 @@ export default function AuthProvider({ children }) {
   // Only a definite "no" (401, or 404 for a deleted account) logs out; a network error keeps the
   // session so the app still opens while the backend is restarting.
   useEffect(() => {
-    if (!savedToken) return undefined;
+    if (!savedToken || isPreview(savedToken)) return undefined;
     let cancelled = false;
     requestJson('GET', AUTH_ENDPOINTS.me, { token: savedToken })
       .then((me) => {
@@ -125,7 +133,8 @@ export default function AuthProvider({ children }) {
    * the ApiError is thrown so the form can tell the two apart.
    */
   const login = async ({ email, password, role = 'student' }) => {
-    const endpoint = role === 'teacher' ? AUTH_ENDPOINTS.teacherLogin : AUTH_ENDPOINTS.studentLogin;
+    const endpoint =
+      role === 'admin' ? AUTH_ENDPOINTS.adminLogin : role === 'teacher' ? AUTH_ENDPOINTS.teacherLogin : AUTH_ENDPOINTS.studentLogin;
     let response;
     try {
       response = await postJson(endpoint, { email, password });
@@ -180,6 +189,14 @@ export default function AuthProvider({ children }) {
   const updateUser = async ({ fullName, email, course }) => {
     const user = session?.user;
     if (!user) return { ok: false, error: 'Please log in again.' };
+    if (isPreview(session.token)) {
+      const nextUser = toSessionUser({ ...user, fullName, email, course: user.role === 'student' ? course ?? null : null });
+      saveSession({ ...session, user: nextUser });
+      return { ok: true, user: nextUser };
+    }
+    if (user.role === 'admin') {
+      return { ok: false, error: 'Administrator accounts are managed by the school and cannot be edited here.' };
+    }
 
     const isTeacher = user.role === 'teacher';
     const path = isTeacher ? AUTH_ENDPOINTS.updateTeacher(user.id) : AUTH_ENDPOINTS.updateStudent(user.id);
@@ -203,7 +220,30 @@ export default function AuthProvider({ children }) {
     }
   };
 
+  /** Development only: sign in as a sample student, teacher or admin without the backend. */
+  const startPreview = useCallback(
+    (role) => {
+      if (!import.meta.env.DEV || !ROLES.includes(role)) return false;
+      const names = { student: 'Juan Dela Cruz', teacher: 'Maria Santos', admin: 'Admin Preview' };
+      saveSession({
+        token: PREVIEW_TOKEN,
+        expiresAt: Date.now() + 8 * 60 * 60 * 1000,
+        user: {
+          id: { student: 9001, teacher: 9002, admin: 9003 }[role],
+          role,
+          fullName: names[role],
+          email: `${role}.preview@example.com`,
+          course: role === 'student' ? 'BS Information Technology' : null,
+        },
+      });
+      return true;
+    },
+    [saveSession]
+  );
+
   const value = {
+    isPreview: isPreview(session?.token),
+    startPreview,
     isAuthenticated: Boolean(session),
     user: session?.user ?? null,
     token: session?.token ?? null,
