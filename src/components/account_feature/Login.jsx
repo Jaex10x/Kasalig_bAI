@@ -41,6 +41,23 @@ const ROLE_CONFIG = {
       return undefined;
     },
   },
+  admin: {
+    badge: 'Admin Portal',
+    title: 'Administrator sign in',
+    greeting: 'Hello, admin! Let\'s check on the school.',
+    endpoint: AUTH_ENDPOINTS.adminLogin,
+    idLabel: 'Administrator email',
+    idPlaceholder: 'admin@cit.edu',
+    footerLinks: [
+      { label: 'Teacher login', page: 'teacher-login' },
+      { label: 'Student login', page: 'student-login' },
+    ],
+    validateId: (id) => {
+      if (!id) return 'Please enter your administrator email.';
+      if (!EMAIL_PATTERN.test(id)) return 'Enter a valid email address.';
+      return undefined;
+    },
+  },
 };
 
 const INITIAL_FORM = { email: '', password: '' };
@@ -187,7 +204,7 @@ export default function Login({ role = 'student', onSubmit, onLogin, onNavigate,
   return (
     <AuthLayout
       badge={config.badge}
-      badgeVariant={role === 'teacher' ? 'teacher' : 'student'}
+      badgeVariant={role === 'student' ? 'student' : 'teacher'}
       title={config.title}
       footerLinks={config.footerLinks}
       onNavigate={onNavigate}
@@ -217,7 +234,9 @@ export default function Login({ role = 'student', onSubmit, onLogin, onNavigate,
           {submitting ? 'Logging in…' : 'Login'}
         </button>
 
-        {role === 'teacher' ? (
+        {role === 'admin' ? (
+          <p className="kb-auth-note">Administrator accounts are created by the school. Contact IT if you need access.</p>
+        ) : role === 'teacher' ? (
           <p className="kb-auth-note">
             New teacher? Register with institutional credentials. Accounts are verified by
             your school administrator.
@@ -241,3 +260,4 @@ export default function Login({ role = 'student', onSubmit, onLogin, onNavigate,
 
 export const StudentLogin = (props) => <Login {...props} role="student" />;
 export const TeacherLogin = (props) => <Login {...props} role="teacher" />;
+export const AdminLogin = (props) => <Login {...props} role="admin" />;

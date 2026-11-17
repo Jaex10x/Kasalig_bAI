@@ -8,6 +8,8 @@ export const AUTH_ENDPOINTS = {
   registerStudent: '/api/student/postStudent',
   studentLogin: '/api/student/login',
   teacherLogin: '/api/teacher/login',
+  // Not on the backend yet: SecurityConfig keeps /api/admin/** closed until an admin login exists.
+  adminLogin: '/api/admin/login',
   // Needs the login token: who the token belongs to (used to check a saved session on page load).
   me: '/api/auth/me',
   updateStudent: (id) => `/api/student/updateStudent?studentId=${encodeURIComponent(id)}`,

@@ -7,6 +7,7 @@ const PAGE_PATHS = {
   login: '/login',
   'student-login': '/login',
   'teacher-login': '/teacher-login',
+  'admin-login': '/admin-login',
   register: '/register',
   'get-started': '/register',
   'forgot-password': '/forgot-password',
