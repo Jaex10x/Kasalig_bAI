@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { SEVERITIES } from './curriculum';
-import { formatDate, useStudentProgress } from './dashboardHooks';
+import { SEVERITIES } from '../../data/curriculum';
+import { formatDate, useStudentProgress } from '../../hooks/dashboardHooks';
 import { GapTypeChip, SeverityChip } from './DashWidgets';
 import { ArrowIcon, BookIcon, BulbIcon, CapyFace, ChatIcon, CheckIcon, LinkIcon, PencilIcon, PlayIcon, QuizIcon, SparkleIcon } from './DashIcons';
 

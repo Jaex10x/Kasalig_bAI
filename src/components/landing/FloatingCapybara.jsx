@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import Capybara from '../capybaraStyle/Capybara';
-import useCapybaraPoke from '../capybaraStyle/useCapybaraPoke';
+import Capybara from '../capybara/Capybara';
+import useCapybaraPoke from '../capybara/useCapybaraPoke';
 
 const GREETINGS = [
   'Hi there! 👋 Welcome to Kasalig bAI!',

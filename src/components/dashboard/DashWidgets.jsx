@@ -1,6 +1,6 @@
-import { useCountUp } from './dashboardHooks';
-import { GAP_TYPES, LANGUAGES, SEVERITIES } from './curriculum';
-import { masteryLevel } from './engine';
+import { useCountUp } from '../../hooks/dashboardHooks';
+import { GAP_TYPES, LANGUAGES, SEVERITIES } from '../../data/curriculum';
+import { masteryLevel } from '../../lib/engine';
 
 const AVATAR_COLORS = ['#de7a40', '#8b5cf6', '#10b981', '#e5604d', '#f59e0b', '#0ea5e9'];
 
