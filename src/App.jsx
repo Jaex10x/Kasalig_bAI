@@ -1,31 +1,31 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
-import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import EditAccountPage from './pages/EditAccountPage';
-import PreviewPage from './pages/PreviewPage';
-import DashboardPage from './pages/DashboardPage';
+import LandingPage from './pages/public/LandingPage';
+import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import EditAccountPage from './pages/auth/EditAccountPage';
+import PreviewPage from './pages/public/PreviewPage';
+import DashboardPage from './pages/shared/DashboardPage';
 // Student
-import QuizPicker from './pages/QuizPicker';
-import QuizScreen from './pages/QuizScreen';
-import RecommendationHub from './pages/RecommendationHub';
-import LearningPath from './pages/LearningPath';
-import PracticeScreen from './pages/PracticeScreen';
-import ProgressHistory from './pages/ProgressHistory';
-import TutorChat from './pages/TutorChat';
-import RecommendationsPage from './pages/RecommendationsPage';
+import QuizPicker from './pages/student/QuizPicker';
+import QuizScreen from './pages/student/QuizScreen';
+import RecommendationHub from './pages/student/RecommendationHub';
+import LearningPath from './pages/student/LearningPath';
+import PracticeScreen from './pages/student/PracticeScreen';
+import ProgressHistory from './pages/student/ProgressHistory';
+import TutorChat from './pages/student/TutorChat';
+import RecommendationsPage from './pages/student/RecommendationsPage';
 // Teacher
-import TeacherStudents from './pages/TeacherStudents';
-import StudentReport from './pages/StudentReport';
-import QuizBuilder from './pages/QuizBuilder';
-import QuizEditor from './pages/QuizEditor';
-import ResourceLibrary from './pages/ResourceLibrary';
-import CurriculumMap from './pages/CurriculumMap';
+import TeacherStudents from './pages/teacher/TeacherStudents';
+import StudentReport from './pages/teacher/StudentReport';
+import QuizBuilder from './pages/teacher/QuizBuilder';
+import QuizEditor from './pages/teacher/QuizEditor';
+import ResourceLibrary from './pages/teacher/ResourceLibrary';
+import CurriculumMap from './pages/shared/CurriculumMap';
 // Admin
-import ManageClasses from './pages/ManageClasses';
-import ManageSubjects from './pages/ManageSubjects';
-import ProtectedRoute from './components/ProtectedRoute';
+import ManageClasses from './pages/admin/ManageClasses';
+import ManageSubjects from './pages/admin/ManageSubjects';
+import ProtectedRoute from './routes/ProtectedRoute';
 import DashboardLayout, { RoleOnly } from './components/dashboard/DashboardLayout';
 import useAppNavigate from './hooks/useAppNavigate';
 

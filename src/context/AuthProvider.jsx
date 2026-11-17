@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AuthContext } from './AuthContext';
-import { ApiError, AUTH_ENDPOINTS, postJson, requestJson } from '../components/account_feature/authApi';
+import { ApiError, AUTH_ENDPOINTS, postJson, requestJson } from '../services/authApi';
 
 // The session is { token, expiresAt, user }. The token is the JWT from login: it is sent as
 // "Authorization: Bearer <token>" and is what tells the backend who is calling. user is the public
