@@ -142,226 +142,138 @@ export const DiscordIcon = ({ size = 18, color = "currentColor" }) => (
   </svg>
 );
 
-// High-Fidelity 3D Rocket Component
-export const RocketGraphic = ({ isLaunching = false, className = "", onClick }) => (
-  <div 
-    className={`rocket-3d-container ${isLaunching ? 'launching-3d' : ''} ${className}`}
+// 16x16 pixel-art sprites: each row is a string, each character a palette key ('.' = empty).
+// Runs of the same colour are merged into one <rect> to keep the SVG small.
+const pixelRects = (rows, palette, keyPrefix) =>
+  rows.flatMap((row, y) => {
+    const rects = [];
+    let x = 0;
+    while (x < row.length) {
+      const ch = row[x];
+      let end = x + 1;
+      while (end < row.length && row[end] === ch) end++;
+      if (ch !== '.' && palette[ch]) {
+        rects.push(<rect key={`${keyPrefix}-${y}-${x}`} x={x} y={y} width={end - x} height={1} fill={palette[ch]} />);
+      }
+      x = end;
+    }
+    return rects;
+  });
+
+const PixelLayer = ({ rows, palette, name, className }) => <g className={className}>{pixelRects(rows, palette, name)}</g>;
+
+const ROCKET_PALETTE = {
+  K: '#0f172a', // outline
+  W: '#f8fafc', // body
+  G: '#cbd5e1', // body shade
+  R: '#f97316', // nose & fins
+  r: '#c2410c', // fin shade
+  D: '#475569', // engine band
+  B: '#7dd3fc', // window glare
+  b: '#0369a1', // window
+  Y: '#fde047', // flame core
+  O: '#fb923c', // flame
+  E: '#ef4444', // flame tip
+};
+
+const ROCKET_BODY = [
+  '.......KK.......',
+  '......KRRK......',
+  '.....KRRRrK.....',
+  '.....KWWWGK.....',
+  '....KWWWWWGK....',
+  '....KWWKKWGK....',
+  '....KWKBbKGK....',
+  '....KWKbbKGK....',
+  '....KWWKKWGK....',
+  '....KWWWWWGK....',
+  '..KRKWWWWWGKrK..',
+  '.KRRKWWWWWGKrrK.',
+  '.KRRKDDDDDDKrrK.',
+  '.KKKKKDDDDKKKKK.',
+];
+const ROCKET_FLAME_A = [
+  ...Array(14).fill('................'),
+  '.....EOYYOE.....',
+  '......EOOE......',
+];
+const ROCKET_FLAME_B = [
+  ...Array(14).fill('................'),
+  '......OYYO......',
+  '.......EE.......',
+];
+
+// Pixel rocket, tilted a little to the right; click to launch.
+export const RocketGraphic = ({ isLaunching = false, className = '', onClick, size = 160 }) => (
+  <button
+    type="button"
+    className={`pixel-sprite pixel-rocket ${isLaunching ? 'is-launching' : ''} ${className}`}
     onClick={onClick}
-    title="Click me to blast off in 3D!"
+    title="Click me to blast off!"
+    aria-label="Launch the rocket"
   >
-    <svg 
-      width="82" 
-      height="94" 
-      viewBox="0 0 100 115" 
-      fill="none" 
-      xmlns="http://www.w3.org/2000/svg"
-      className="rocket-3d-svg"
-    >
-      <defs>
-        {/* 3D Nose Cone Gradient */}
-        <linearGradient id="noseCone3D" x1="38" y1="10" x2="62" y2="34" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FB923C" />
-          <stop offset="45%" stopColor="#EA580C" />
-          <stop offset="100%" stopColor="#9A3412" />
-        </linearGradient>
-
-        {/* 3D Cylindrical Rocket Body Gradient */}
-        <linearGradient id="fuselage3D" x1="35" y1="45" x2="65" y2="45" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#CBD5E1" />
-          <stop offset="25%" stopColor="#FFFFFF" />
-          <stop offset="70%" stopColor="#E2E8F0" />
-          <stop offset="100%" stopColor="#94A3B8" />
-        </linearGradient>
-
-        {/* 3D Fins Gradients */}
-        <linearGradient id="finLeft3D" x1="22" y1="52" x2="40" y2="74" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#F97316" />
-          <stop offset="100%" stopColor="#9A3412" />
-        </linearGradient>
-        <linearGradient id="finRight3D" x1="78" y1="52" x2="60" y2="74" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#EA580C" />
-          <stop offset="100%" stopColor="#7C2D12" />
-        </linearGradient>
-
-        {/* 3D Glass Window Reflection */}
-        <radialGradient id="glassPorthole" cx="48" cy="44" r="10" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#BAE6FD" />
-          <stop offset="60%" stopColor="#0284C7" />
-          <stop offset="100%" stopColor="#075985" />
-        </radialGradient>
-
-        {/* Thruster Flame Gradient */}
-        <linearGradient id="thrusterFlame" x1="50" y1="74" x2="50" y2="108" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FDE047" />
-          <stop offset="30%" stopColor="#FB923C" />
-          <stop offset="75%" stopColor="#EF4444" />
-          <stop offset="100%" stopColor="#DC2626" stopOpacity="0" />
-        </linearGradient>
-
-        {/* Ambient Drop Shadow Filter */}
-        <filter id="rocketCastShadow" x="-15%" y="-10%" width="130%" height="130%">
-          <feDropShadow dx="-2" dy="8" stdDeviation="6" floodColor="#000000" floodOpacity="0.45" />
-        </filter>
-      </defs>
-
-      <g filter="url(#rocketCastShadow)">
-        {/* Animated Thruster Exhaust Flame */}
-        <g className="flame-group-3d">
-          <path 
-            d="M44 76C44 76 50 102 50 110C50 102 56 76 56 76H44Z" 
-            fill="url(#thrusterFlame)" 
-            className="outer-flame-3d"
-          />
-          <path 
-            d="M47 76C47 76 50 94 50 100C50 94 53 76 53 76H47Z" 
-            fill="#FEF08A" 
-            className="inner-flame-3d"
-          />
-        </g>
-
-        {/* Exhaust Nozzle */}
-        <path d="M42 74H58L55 78H45L42 74Z" fill="#334155" stroke="#1E293B" strokeWidth="1" />
-
-        {/* Left Fin 3D */}
-        <path d="M25 60L40 46V72L24 76C24 76 24.5 64 25 60Z" fill="url(#finLeft3D)" />
-        <path d="M25 60L40 46V49L26 62Z" fill="#FDBA74" opacity="0.6" />
-
-        {/* Right Fin 3D */}
-        <path d="M75 60L60 46V72L76 76C76 76 75.5 64 75 60Z" fill="url(#finRight3D)" />
-        <path d="M75 60L60 46V49L74 62Z" fill="#9A3412" opacity="0.4" />
-
-        {/* Center Fuselage 3D Body */}
-        <path 
-          d="M50 12C38 28 38 66 38 74H62C62 66 62 28 50 12Z" 
-          fill="url(#fuselage3D)" 
-        />
-
-        {/* 3D Specular Highlight stripe down the left flank */}
-        <path 
-          d="M47 16C42 28 41 62 41 72H44C44 62 45 28 49 16Z" 
-          fill="#FFFFFF" 
-          opacity="0.75" 
-        />
-
-        {/* Red / Orange 3D Nose Cone */}
-        <path 
-          d="M50 12C45 19 41.5 28 40.5 35H59.5C58.5 28 55 19 50 12Z" 
-          fill="url(#noseCone3D)" 
-        />
-        {/* Nose Highlight */}
-        <path d="M48 14C45 20 43 27 42.5 33H45C45.5 27 47 20 49 14Z" fill="#FED7AA" opacity="0.8" />
-
-        {/* 3D Metallic Porthole Rim */}
-        <circle cx="50" cy="48" r="9.5" fill="#E2E8F0" stroke="#475569" strokeWidth="2" />
-        {/* 3D Glass Lens */}
-        <circle cx="50" cy="48" r="7.5" fill="url(#glassPorthole)" />
-        {/* Glass Glare Highlight */}
-        <path d="M46 44C47.5 42.5 50 42.5 52 43.5C50 44 47.5 45.5 46.5 48C46 46.5 45.5 45 46 44Z" fill="#FFFFFF" opacity="0.85" />
-      </g>
+    <svg width={size} height={size} viewBox="0 0 16 16" shapeRendering="crispEdges" aria-hidden="true">
+      <PixelLayer rows={ROCKET_FLAME_A} palette={ROCKET_PALETTE} name="fa" className="pixel-frame-a" />
+      <PixelLayer rows={ROCKET_FLAME_B} palette={ROCKET_PALETTE} name="fb" className="pixel-frame-b" />
+      <PixelLayer rows={ROCKET_BODY} palette={ROCKET_PALETTE} name="rb" />
     </svg>
-  </div>
+  </button>
 );
 
-// High-Fidelity 3D Cute Creature Component
-export const CuteCreatureGraphic = ({ isHappy = false, className = "", onClick }) => (
-  <div 
-    className={`creature-3d-container ${isHappy ? 'celebrating-3d' : ''} ${className}`}
+const CREATURE_PALETTE = {
+  K: '#2e1065', // outline
+  P: '#8b5cf6', // body
+  p: '#6d28d9', // body shade
+  L: '#c4b5fd', // shine
+  k: '#f472b6', // gills & cheeks
+  E: '#0f172a', // eyes & mouth
+  w: '#ffffff', // eye sparkle
+};
+
+const CREATURE_BODY = [
+  '................',
+  '....KKKKKKKK....',
+  '...KPPLLPPPPK...',
+  '..KPLLPPPPPPPK..',
+  '..KPPPPPPPPPPK..',
+  '..KPPPPPPPPPPK..',
+  '.KPPPPPPPPPPPPK.',
+  '.KPkkPPPPPPkkPK.',
+  '.KPPPPEPPEPPPPK.',
+  '.KpPPPPEEPPPPpK.',
+  '..KppPPPPPPppK..',
+  '...KKppppppKK...',
+  '....KKKKKKKK....',
+  '.....Kp..pK.....',
+  '.....KK..KK.....',
+];
+const CREATURE_GILLS_A = ['', '', '', 'kk............kk', '.k............k.', 'kk............kk'];
+const CREATURE_GILLS_B = ['', '', '.k............k.', 'k..............k', 'kk............kk', '.k............k.', 'k..............k'];
+const CREATURE_EYES_OPEN = ['', '', '', '', '', '.....Ew..Ew.....', '.....EE..EE.....'];
+const CREATURE_EYES_SHUT = ['', '', '', '', '', '', '.....EE..EE.....'];
+const CREATURE_EYES_HAPPY = ['', '', '', '', '', '.....EE..EE.....', '....E..EE..E....'];
+
+// Pixel axolotl: wiggles its gills and blinks; click for a happy hop.
+export const CuteCreatureGraphic = ({ isHappy = false, className = '', onClick, size = 160 }) => (
+  <button
+    type="button"
+    className={`pixel-sprite pixel-creature ${isHappy ? 'is-happy' : ''} ${className}`}
     onClick={onClick}
     title="Click me for a surprise!"
+    aria-label="Say hi to the axolotl"
   >
-    <svg 
-      width="92" 
-      height="78" 
-      viewBox="0 0 100 84" 
-      fill="none" 
-      xmlns="http://www.w3.org/2000/svg"
-      className="creature-3d-svg"
-    >
-      <defs>
-        {/* Spherical 3D Body Gradient */}
-        <radialGradient id="bodySphere3D" cx="42" cy="36" r="38" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#C4B5FD" />
-          <stop offset="35%" stopColor="#8B5CF6" />
-          <stop offset="75%" stopColor="#6D28D9" />
-          <stop offset="100%" stopColor="#4C1D95" />
-        </radialGradient>
-
-        {/* 3D Cheek Glow */}
-        <radialGradient id="cheekGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#F472B6" stopOpacity="0.95" />
-          <stop offset="60%" stopColor="#EC4899" stopOpacity="0.6" />
-          <stop offset="100%" stopColor="#EC4899" stopOpacity="0" />
-        </radialGradient>
-
-        {/* 3D Gill Gradient */}
-        <linearGradient id="gill3D" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#FBCFE8" />
-          <stop offset="60%" stopColor="#F472B6" />
-          <stop offset="100%" stopColor="#DB2777" />
-        </linearGradient>
-
-        {/* Creature Drop Shadow */}
-        <filter id="creatureCastShadow" x="-15%" y="-10%" width="130%" height="130%">
-          <feDropShadow dx="0" dy="6" stdDeviation="5" floodColor="#000000" floodOpacity="0.4" />
-        </filter>
-      </defs>
-
-      <g filter="url(#creatureCastShadow)">
-        {/* Left 3D Gills / Fins */}
-        <g className="creature-gill-left">
-          <ellipse cx="14" cy="30" rx="9" ry="5.5" fill="url(#gill3D)" transform="rotate(-22 14 30)" />
-          <ellipse cx="11" cy="42" rx="10" ry="6" fill="url(#gill3D)" />
-          <ellipse cx="16" cy="54" rx="9" ry="5.5" fill="url(#gill3D)" transform="rotate(22 16 54)" />
-        </g>
-
-        {/* Right 3D Gills / Fins */}
-        <g className="creature-gill-right">
-          <ellipse cx="86" cy="30" rx="9" ry="5.5" fill="url(#gill3D)" transform="rotate(22 86 30)" />
-          <ellipse cx="89" cy="42" rx="10" ry="6" fill="url(#gill3D)" />
-          <ellipse cx="84" cy="54" rx="9" ry="5.5" fill="url(#gill3D)" transform="rotate(-22 84 54)" />
-        </g>
-
-        {/* Plump 3D Spherical Head/Body */}
-        <ellipse cx="50" cy="44" rx="38" ry="32" fill="url(#bodySphere3D)" />
-
-        {/* 3D Glossy Light Reflection Arc */}
-        <ellipse cx="44" cy="24" rx="20" ry="8" fill="#FFFFFF" opacity="0.35" transform="rotate(-8 44 24)" />
-
-        {/* 3D Rosy Cheeks */}
-        <circle cx="28" cy="50" r="7.5" fill="url(#cheekGlow)" />
-        <circle cx="72" cy="50" r="7.5" fill="url(#cheekGlow)" />
-
-        {/* 3D Expressive Eyes */}
-        {isHappy ? (
-          // Happy Joyful Arcs ^_^
-          <g stroke="#1E1B4B" strokeWidth="3.5" strokeLinecap="round" fill="none">
-            <path d="M33 42C35.5 37 40.5 37 43 42" />
-            <path d="M57 42C59.5 37 64.5 37 67 42" />
-          </g>
-        ) : (
-          // Deep glossy 3D anime spheres
-          <g>
-            {/* Left Eye */}
-            <circle cx="38" cy="40" r="6" fill="#0F172A" />
-            <circle cx="36" cy="38" r="2.4" fill="#FFFFFF" />
-            <circle cx="41" cy="42" r="1.1" fill="#FFFFFF" opacity="0.8" />
-
-            {/* Right Eye */}
-            <circle cx="62" cy="40" r="6" fill="#0F172A" />
-            <circle cx="60" cy="38" r="2.4" fill="#FFFFFF" />
-            <circle cx="65" cy="42" r="1.1" fill="#FFFFFF" opacity="0.8" />
-          </g>
-        )}
-
-        {/* 3D Cute Curved Smile */}
-        <path 
-          d="M46 48C47.5 52 52.5 52 54 48" 
-          stroke="#0F172A" 
-          strokeWidth="2.8" 
-          strokeLinecap="round" 
-          fill="none" 
-        />
-      </g>
+    <svg width={size} height={size} viewBox="0 0 16 16" shapeRendering="crispEdges" aria-hidden="true">
+      <PixelLayer rows={CREATURE_GILLS_A} palette={CREATURE_PALETTE} name="ga" className="pixel-frame-a" />
+      <PixelLayer rows={CREATURE_GILLS_B} palette={CREATURE_PALETTE} name="gb" className="pixel-frame-b" />
+      <PixelLayer rows={CREATURE_BODY} palette={CREATURE_PALETTE} name="cb" />
+      {isHappy ? (
+        <PixelLayer rows={CREATURE_EYES_HAPPY} palette={CREATURE_PALETTE} name="eh" />
+      ) : (
+        <>
+          <PixelLayer rows={CREATURE_EYES_OPEN} palette={CREATURE_PALETTE} name="eo" className="pixel-eyes-open" />
+          <PixelLayer rows={CREATURE_EYES_SHUT} palette={CREATURE_PALETTE} name="es" className="pixel-eyes-shut" />
+        </>
+      )}
     </svg>
-  </div>
+  </button>
 );
