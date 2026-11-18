@@ -76,13 +76,15 @@ export const EasiestWaySection = ({ onStartLearning }) => {
           onClick={handleCardClick}
           title="Click around the cosmos for starry sparks!"
         >
-          {/* Background Ambient Starfield Dots */}
-          <div className="star-dot dot-1"></div>
-          <div className="star-dot dot-2"></div>
-          <div className="star-dot dot-3"></div>
-          <div className="star-dot dot-4"></div>
-          <div className="star-dot dot-5"></div>
-          <div className="star-dot dot-6"></div>
+          {/* Moving pixel starfield: two drifting layers, twinkling stars and a shooting star */}
+          <div className="space-starfield" aria-hidden="true">
+            <div className="starfield-layer layer-far"></div>
+            <div className="starfield-layer layer-near"></div>
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <span key={n} className={`pixel-twinkle twinkle-${n}`}></span>
+            ))}
+            <span className="shooting-star"></span>
+          </div>
 
           {/* User clicked sparks */}
           {floatingStars.map((star) => (
@@ -111,15 +113,23 @@ export const EasiestWaySection = ({ onStartLearning }) => {
           {/* Center: Wavy Animated Headline & Primary CTA */}
           <div className="space-content-center">
             <h2 className="space-main-heading wavy-title" aria-label={titleText}>
-              {titleText.split('').map((char, index) => (
-                <span
-                  key={index}
-                  className="wavy-char"
-                  style={{ animationDelay: `${index * 0.08}s` }}
-                >
-                  {char === ' ' ? '\u00A0' : char}
-                </span>
-              ))}
+              {titleText.split(' ').map((word, w, words) => {
+                // Letters wave one after another; words stay whole so lines never break mid-word.
+                const start = words.slice(0, w).join(' ').length + (w ? 1 : 0);
+                return (
+                  <span key={w} className="wavy-word" aria-hidden="true">
+                    {word.split('').map((char, i) => (
+                      <span
+                        key={i}
+                        className="wavy-char"
+                        style={{ animationDelay: `${(start + i) * 0.08}s` }}
+                      >
+                        {char}
+                      </span>
+                    ))}
+                  </span>
+                );
+              })}
             </h2>
 
             <p className="space-sub-heading">
@@ -131,7 +141,7 @@ export const EasiestWaySection = ({ onStartLearning }) => {
               className="space-btn-start"
               onClick={onStartLearning}
             >
-              <GamepadIcon size={18} color="#152232" />
+              <GamepadIcon size={22} color="#152232" />
               <span>Start learning</span>
             </button>
           </div>

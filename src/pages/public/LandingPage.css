@@ -1788,49 +1788,133 @@
    8. The easiest way to learn (Interactive Cosmic Space Card)
    -------------------------------------------------------------------------- */
 .kasalig-easiest-way-section {
-  padding: 20px 0 80px;
+  padding: 28px 0 96px;
+}
+
+.kasalig-easiest-way-section .kasalig-container {
+  max-width: 1280px;
 }
 
 .space-portal-card {
   position: relative;
+  isolation: isolate;
   background-color: #152232;
-  border-radius: 24px;
-  padding: 56px 36px;
+  border-radius: 28px;
+  min-height: 480px;
+  padding: 88px 56px;
   display: grid;
-  grid-template-columns: 160px 1fr 160px;
+  grid-template-columns: 200px 1fr 200px;
   align-items: center;
-  box-shadow: 0 20px 45px rgba(21, 34, 50, 0.35);
+  box-shadow: 0 24px 55px rgba(21, 34, 50, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.08);
   overflow: visible;
   cursor: crosshair;
 }
 
-/* Starfield Dots */
-.star-dot {
-  position: absolute;
-  width: 3px;
-  height: 3px;
-  background-color: #ffffff;
-  border-radius: 9999px;
-  pointer-events: none;
-  animation: twinkleStar 3s infinite ease-in-out alternate;
+.space-portal-card > :not(.space-starfield) {
+  position: relative;
+  z-index: 1;
 }
 
-.dot-1 { top: 25%; left: 15%; animation-delay: 0.2s; }
-.dot-2 { top: 75%; left: 22%; animation-delay: 1.1s; }
-.dot-3 { top: 20%; left: 50%; animation-delay: 0.7s; }
-.dot-4 { top: 80%; left: 60%; animation-delay: 1.5s; }
-.dot-5 { top: 30%; right: 15%; animation-delay: 0.4s; }
-.dot-6 { top: 70%; right: 25%; animation-delay: 1.8s; }
+/* Moving pixel starfield (clipped to the card; the card itself stays overflow: visible for bubbles) */
+.space-starfield {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
 
-@keyframes twinkleStar {
-  0% { opacity: 0.2; transform: scale(0.8); }
-  100% { opacity: 0.9; transform: scale(1.3); }
+.starfield-layer {
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat;
+  image-rendering: pixelated;
+  will-change: background-position;
+}
+
+/* Far layer: small dim pixels, slow drift */
+.layer-far {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' shape-rendering='crispEdges'%3E%3Cg fill='%23ffffff' fill-opacity='0.45'%3E%3Crect x='18' y='30' width='2' height='2'/%3E%3Crect x='92' y='12' width='2' height='2'/%3E%3Crect x='160' y='64' width='2' height='2'/%3E%3Crect x='214' y='22' width='2' height='2'/%3E%3Crect x='46' y='118' width='2' height='2'/%3E%3Crect x='128' y='150' width='2' height='2'/%3E%3Crect x='196' y='132' width='2' height='2'/%3E%3Crect x='70' y='196' width='2' height='2'/%3E%3Crect x='150' y='222' width='2' height='2'/%3E%3Crect x='226' y='190' width='2' height='2'/%3E%3Crect x='8' y='176' width='2' height='2'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 240px 240px;
+  animation: starDriftFar 48s linear infinite;
+}
+
+/* Near layer: bigger, brighter pixels (some tinted), faster drift */
+.layer-near {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='300' shape-rendering='crispEdges'%3E%3Cg fill='%23ffffff' fill-opacity='0.9'%3E%3Crect x='40' y='60' width='4' height='4'/%3E%3Crect x='250' y='36' width='4' height='4'/%3E%3Crect x='300' y='210' width='4' height='4'/%3E%3Crect x='110' y='250' width='4' height='4'/%3E%3C/g%3E%3Cg fill='%23fed7aa'%3E%3Crect x='170' y='120' width='4' height='4'/%3E%3Crect x='20' y='180' width='3' height='3'/%3E%3C/g%3E%3Cg fill='%23c4b5fd'%3E%3Crect x='330' y='96' width='3' height='3'/%3E%3Crect x='200' y='274' width='3' height='3'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 360px 300px;
+  animation: starDriftNear 22s linear infinite;
+}
+
+/* Stars stream left and down, so the right-tilted rocket looks like it is flying */
+@keyframes starDriftFar {
+  from { background-position: 0 0; }
+  to { background-position: -240px 240px; }
+}
+
+@keyframes starDriftNear {
+  from { background-position: 0 0; }
+  to { background-position: -360px 300px; }
+}
+
+/* Twinkling 4-point pixel stars that also drift */
+.pixel-twinkle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #ffffff;
+  box-shadow: 4px 0 #ffffff, -4px 0 #ffffff, 0 4px #ffffff, 0 -4px #ffffff;
+  animation:
+    pixelTwinkle 2.4s steps(1) infinite,
+    twinkleDrift 9s linear infinite;
+}
+
+.twinkle-1 { top: 18%; left: 12%; animation-delay: 0s, -1s; }
+.twinkle-2 { top: 78%; left: 20%; animation-delay: 0.6s, -4s; }
+.twinkle-3 { top: 14%; left: 48%; animation-delay: 1.2s, -2s; background: #fed7aa; box-shadow: 4px 0 #fed7aa, -4px 0 #fed7aa, 0 4px #fed7aa, 0 -4px #fed7aa; }
+.twinkle-4 { top: 84%; left: 62%; animation-delay: 1.8s, -6s; }
+.twinkle-5 { top: 24%; left: 84%; animation-delay: 0.9s, -3s; background: #c4b5fd; box-shadow: 4px 0 #c4b5fd, -4px 0 #c4b5fd, 0 4px #c4b5fd, 0 -4px #c4b5fd; }
+.twinkle-6 { top: 66%; left: 76%; animation-delay: 1.5s, -7s; }
+
+@keyframes pixelTwinkle {
+  0% { opacity: 1; scale: 1; }
+  33% { opacity: 0.55; scale: 0.5; }
+  66% { opacity: 0.15; scale: 0.5; }
+  83% { opacity: 0.55; scale: 0.75; }
+}
+
+@keyframes twinkleDrift {
+  from { translate: 0 0; }
+  to { translate: -60px 60px; }
+}
+
+/* Shooting star every few seconds */
+.shooting-star {
+  position: absolute;
+  top: 12%;
+  left: 78%;
+  width: 96px;
+  height: 3px;
+  background: linear-gradient(90deg, #ffffff, rgba(255, 255, 255, 0));
+  transform: rotate(-35deg);
+  transform-origin: left center;
+  opacity: 0;
+  animation: shootingStar 7s linear infinite 2s;
+}
+
+@keyframes shootingStar {
+  0% { opacity: 0; translate: 0 0; }
+  2% { opacity: 1; }
+  12% { opacity: 0; translate: -420px 300px; }
+  100% { opacity: 0; translate: -420px 300px; }
 }
 
 /* User Click Cosmic Sparks */
 .user-cosmic-sparkle {
   position: absolute;
+  z-index: 2;
   font-size: 20px;
   pointer-events: none;
   animation: sparklePop 1.2s ease-out forwards;
@@ -1842,66 +1926,8 @@
   100% { transform: scale(1) translateY(-20px) rotate(180deg); opacity: 0; }
 }
 
-/* Left Actor: 3D Animated Rocket */
-.space-actor-left {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.rocket-3d-container {
-  cursor: pointer;
-  perspective: 800px;
-  transform-style: preserve-3d;
-  animation: rocket3DFloat 4.2s ease-in-out infinite alternate;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  will-change: transform;
-}
-
-.rocket-3d-container:hover {
-  transform: perspective(800px) scale(1.15) rotateY(-12deg) rotateX(10deg);
-}
-
-.rocket-3d-container.launching-3d {
-  animation: rocket3DLaunch 3.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
-
-.flame-group-3d {
-  transform-origin: 50px 76px;
-  animation: flame3DFlicker 0.22s infinite alternate;
-}
-
-@keyframes flame3DFlicker {
-  0% { transform: scaleY(0.92) scaleX(0.96); opacity: 0.85; filter: drop-shadow(0 0 4px #ea580c); }
-  100% { transform: scaleY(1.35) scaleX(1.08); opacity: 1; filter: drop-shadow(0 0 12px #ff4500); }
-}
-
-@keyframes rocket3DFloat {
-  0% {
-    transform: perspective(800px) rotateY(-8deg) rotateX(6deg) translateY(0);
-    filter: drop-shadow(-4px 12px 14px rgba(0, 0, 0, 0.45));
-  }
-  50% {
-    transform: perspective(800px) rotateY(6deg) rotateX(-5deg) translateY(-14px);
-    filter: drop-shadow(-8px 22px 22px rgba(0, 0, 0, 0.6));
-  }
-  100% {
-    transform: perspective(800px) rotateY(-8deg) rotateX(6deg) translateY(0);
-    filter: drop-shadow(-4px 12px 14px rgba(0, 0, 0, 0.45));
-  }
-}
-
-@keyframes rocket3DLaunch {
-  0% { transform: perspective(800px) scale(1) translateY(0); }
-  25% { transform: perspective(800px) scale(1.12) translateY(-25px) rotateZ(-6deg); }
-  45% { transform: perspective(800px) scale(0.4) translateY(-320px) rotateZ(12deg); opacity: 0; }
-  52% { transform: perspective(800px) scale(0.3) translateY(180px); opacity: 0; }
-  100% { transform: perspective(800px) scale(1) translateY(0); opacity: 1; }
-}
-
-/* Right Actor: 3D Cute Creature */
+/* Actors */
+.space-actor-left,
 .space-actor-right {
   position: relative;
   display: flex;
@@ -1910,57 +1936,147 @@
   justify-content: center;
 }
 
-.creature-3d-container {
+/* 16-bit pixel sprites */
+.pixel-sprite {
+  --sprite: 168px;
+  display: block;
+  padding: 0;
+  background: none;
+  border: 0;
   cursor: pointer;
-  perspective: 800px;
-  transform-style: preserve-3d;
-  animation: creature3DFloat 3.8s ease-in-out infinite alternate;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  will-change: transform;
+  transition: scale 0.15s steps(2);
 }
 
-.creature-3d-container:hover {
-  transform: perspective(800px) scale(1.18) rotateY(12deg) rotateX(-6deg);
+.pixel-sprite:hover {
+  scale: 1.08;
 }
 
-.creature-3d-container.celebrating-3d {
-  animation: creature3DBounce 1.1s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+.pixel-sprite:focus-visible {
+  outline: 3px dashed #fed7aa;
+  outline-offset: 6px;
 }
 
-.creature-gill-left {
-  animation: gillWiggle3D 2.2s infinite ease-in-out alternate;
-  transform-origin: 22px 42px;
+.pixel-sprite svg {
+  display: block;
+  width: var(--sprite);
+  height: var(--sprite);
+  overflow: visible;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 14px rgba(254, 215, 170, 0.16));
 }
 
-.creature-gill-right {
-  animation: gillWiggle3D 2.2s infinite ease-in-out alternate;
-  transform-origin: 78px 42px;
+/* Two-frame sprite animation (flames, gills) */
+.pixel-frame-a,
+.pixel-frame-b {
+  animation: pixelFrame 0.24s steps(1) infinite;
 }
 
-@keyframes creature3DFloat {
-  0% {
-    transform: perspective(800px) rotateY(10deg) rotateX(-5deg) translateY(0) scale(1);
-    filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.4));
+.pixel-frame-b {
+  animation-delay: -0.12s;
+}
+
+@keyframes pixelFrame {
+  0% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Rocket: tilted a little to the right, bobbing in pixel steps */
+.pixel-rocket {
+  transform: rotate(14deg);
+  animation: pixelRocketBob 1.6s steps(4) infinite alternate;
+}
+
+@keyframes pixelRocketBob {
+  from { transform: rotate(14deg) translate(0, 0); }
+  to { transform: rotate(14deg) translate(0, -20px); }
+}
+
+.pixel-rocket.is-launching {
+  animation: pixelRocketLaunch 3.2s steps(32) forwards;
+}
+
+.pixel-rocket.is-launching .pixel-frame-a,
+.pixel-rocket.is-launching .pixel-frame-b {
+  animation-duration: 0.1s;
+}
+
+.pixel-rocket.is-launching .pixel-frame-b {
+  animation-delay: -0.05s;
+}
+
+@keyframes pixelRocketLaunch {
+  0% { transform: rotate(14deg) translate(0, 0); opacity: 1; }
+  8% { transform: rotate(14deg) translate(-3px, 4px); }
+  14% { transform: rotate(14deg) translate(3px, 4px); }
+  20% { transform: rotate(14deg) translate(0, 6px); }
+  45% { transform: rotate(14deg) translate(0, -560px); opacity: 0; }
+  55% { transform: rotate(14deg) translate(0, 260px); opacity: 0; }
+  100% { transform: rotate(14deg) translate(0, 0); opacity: 1; }
+}
+
+/* Axolotl: hops, wiggles its gills and blinks */
+.pixel-creature {
+  animation: pixelHop 1.2s steps(2) infinite;
+}
+
+.pixel-creature .pixel-frame-a,
+.pixel-creature .pixel-frame-b {
+  animation-duration: 0.8s;
+}
+
+.pixel-creature .pixel-frame-b {
+  animation-delay: -0.4s;
+}
+
+@keyframes pixelHop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.pixel-eyes-open { animation: pixelBlinkOpen 4.2s steps(1) infinite; }
+.pixel-eyes-shut { opacity: 0; animation: pixelBlinkShut 4.2s steps(1) infinite; }
+
+@keyframes pixelBlinkOpen {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 0; }
+  96% { opacity: 1; }
+}
+
+@keyframes pixelBlinkShut {
+  0%, 100% { opacity: 0; }
+  92% { opacity: 1; }
+  96% { opacity: 0; }
+}
+
+.pixel-creature.is-happy {
+  animation: pixelHappyHop 0.5s steps(3) infinite;
+}
+
+@keyframes pixelHappyHop {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33% { transform: translateY(-30px) rotate(-8deg); }
+  66% { transform: translateY(-14px) rotate(8deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starfield-layer,
+  .pixel-twinkle,
+  .shooting-star,
+  .pixel-creature,
+  .pixel-frame-a,
+  .pixel-frame-b,
+  .pixel-eyes-open,
+  .pixel-eyes-shut {
+    animation: none;
   }
-  50% {
-    transform: perspective(800px) rotateY(-8deg) rotateX(6deg) translateY(-12px) scale(1.04);
-    filter: drop-shadow(0 20px 24px rgba(0, 0, 0, 0.55));
+  .pixel-frame-b,
+  .pixel-eyes-shut,
+  .shooting-star {
+    opacity: 0;
   }
-  100% {
-    transform: perspective(800px) rotateY(10deg) rotateX(-5deg) translateY(0) scale(1);
-    filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.4));
+  .pixel-rocket:not(.is-launching) {
+    animation: none;
   }
-}
-
-@keyframes creature3DBounce {
-  0%, 100% { transform: perspective(800px) scale(1); }
-  30% { transform: perspective(800px) scale(1.22) translateY(-22px) rotateZ(10deg); }
-  60% { transform: perspective(800px) scale(1.14) translateY(-8px) rotateZ(-10deg); }
-}
-
-@keyframes gillWiggle3D {
-  0% { transform: rotate(-8deg); }
-  100% { transform: rotate(8deg); }
 }
 
 /* Speech Bubbles */
@@ -1999,11 +2115,18 @@
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  font-size: 44px;
+  font-size: 56px;
   font-weight: 800;
   color: #ffffff;
-  letter-spacing: -0.5px;
-  margin-bottom: 12px;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  column-gap: 0.26em;
+  margin-bottom: 18px;
+}
+
+.wavy-word {
+  display: inline-flex;
+  white-space: nowrap;
 }
 
 .wavy-char {
@@ -2032,20 +2155,20 @@
 }
 
 .space-sub-heading {
-  font-size: 15px;
+  font-size: 19px;
   color: #cbd5e1;
-  margin-bottom: 28px;
+  margin-bottom: 36px;
 }
 
 .space-btn-start {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background-color: #ffffff;
   color: #152232;
-  font-size: 14.5px;
+  font-size: 17px;
   font-weight: 700;
-  padding: 12px 26px;
+  padding: 16px 36px;
   border-radius: 9999px;
   border: none;
   cursor: pointer;
@@ -2261,10 +2384,18 @@
     grid-template-columns: 1fr;
   }
   .space-portal-card {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: 'content content' 'rocket creature';
     gap: 36px;
+    min-height: 0;
+    padding: 64px 32px;
     text-align: center;
   }
+  .space-content-center { grid-area: content; }
+  .space-actor-left { grid-area: rocket; }
+  .space-actor-right { grid-area: creature; }
+  .pixel-sprite { --sprite: 120px; }
+  .space-main-heading.wavy-title { font-size: 48px; }
 }
 
 @media (max-width: 640px) {
@@ -2292,6 +2423,16 @@
   .footer-modern-grid {
     grid-template-columns: 1fr;
   }
+  .space-portal-card {
+    padding: 52px 18px 44px;
+  }
+  .space-main-heading.wavy-title {
+    font-size: 34px;
+  }
+  .space-sub-heading {
+    font-size: 16px;
+  }
+  .pixel-sprite { --sprite: 88px; }
   .footer-legal-bar {
     flex-direction: column;
     align-items: flex-start;
