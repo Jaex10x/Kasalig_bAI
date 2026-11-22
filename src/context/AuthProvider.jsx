@@ -4,7 +4,7 @@ import { ApiError, AUTH_ENDPOINTS, postJson, requestJson } from '../services/aut
 
 // The session is { token, expiresAt, user }. The token is the JWT from login: it is sent as
 // "Authorization: Bearer <token>" and is what tells the backend who is calling. user is the public
-// profile ({ id, role, fullName, email, course }). No password is ever stored here.
+// profile ({ id, role, fullName, email, program }). No password is ever stored here.
 // Kept in localStorage so a page refresh does not log the user out.
 const SESSION_KEY = 'kb_session';
 
@@ -13,12 +13,12 @@ const SESSION_KEY = 'kb_session';
 const LEGACY_KEYS = ['kb_mock_users', 'kb_mock_session', 'kb_session_user'];
 
 // Only these fields are kept, whatever else a response carries.
-const toSessionUser = ({ id, role, fullName, email, course }) => ({
+const toSessionUser = ({ id, role, fullName, email, program }) => ({
   id,
   role,
   fullName,
   email,
-  course: course ?? null,
+  program: program ?? null,
 });
 
 const ROLES = ['student', 'teacher', 'admin'];
@@ -157,15 +157,15 @@ export default function AuthProvider({ children }) {
   };
 
   /**
-   * register({ fullName, email, course, password }) -> { ok: true, user } | { ok: false, error }
+   * register({ fullName, email, program, password }) -> { ok: true, user } | { ok: false, error }
    * Creates a student account. It does not sign the student in; they log in afterwards.
    */
-  const register = async ({ fullName, email, course, password }) => {
+  const register = async ({ fullName, email, program, password }) => {
     try {
       const student = await postJson(AUTH_ENDPOINTS.registerStudent, {
         fullName,
         email,
-        course,
+        program,
         password,
       });
       return {
@@ -182,15 +182,15 @@ export default function AuthProvider({ children }) {
   };
 
   /**
-   * updateUser({ fullName, email, course? }) -> { ok: true, user } | { ok: false, error }
+   * updateUser({ fullName, email, program? }) -> { ok: true, user } | { ok: false, error }
    * Saves the signed-in user's own account. The backend checks the token, so a user can only
    * change their own account.
    */
-  const updateUser = async ({ fullName, email, course }) => {
+  const updateUser = async ({ fullName, email, program }) => {
     const user = session?.user;
     if (!user) return { ok: false, error: 'Please log in again.' };
     if (isPreview(session.token)) {
-      const nextUser = toSessionUser({ ...user, fullName, email, course: user.role === 'student' ? course ?? null : null });
+      const nextUser = toSessionUser({ ...user, fullName, email, program: user.role === 'student' ? program ?? null : null });
       saveSession({ ...session, user: nextUser });
       return { ok: true, user: nextUser };
     }
@@ -200,7 +200,7 @@ export default function AuthProvider({ children }) {
 
     const isTeacher = user.role === 'teacher';
     const path = isTeacher ? AUTH_ENDPOINTS.updateTeacher(user.id) : AUTH_ENDPOINTS.updateStudent(user.id);
-    const body = isTeacher ? { fullName, email } : { fullName, email, course: course ?? null };
+    const body = isTeacher ? { fullName, email } : { fullName, email, program: program ?? null };
 
     try {
       const saved = await authRequest('PUT', path, body);
@@ -208,7 +208,7 @@ export default function AuthProvider({ children }) {
         ...user,
         fullName: saved?.fullName ?? fullName,
         email: saved?.email ?? email,
-        course: isTeacher ? null : saved?.course ?? course ?? null,
+        program: isTeacher ? null : saved?.program ?? program ?? null,
       });
       saveSession({ ...session, user: nextUser });
       return { ok: true, user: nextUser };
@@ -233,7 +233,7 @@ export default function AuthProvider({ children }) {
           role,
           fullName: names[role],
           email: `${role}.preview@example.com`,
-          course: role === 'student' ? 'BS Information Technology' : null,
+          program: role === 'student' ? 'BS Information Technology' : null,
         },
       });
       return true;

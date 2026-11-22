@@ -37,9 +37,10 @@ public class SecurityConfig {
                 .requestMatchers("/", "/error").permitAll()
                 .requestMatchers(HttpMethod.POST,
                         "/api/student/register", "/api/student/postStudent", "/api/student/login",
-                        "/api/teacher/register", "/api/teacher/postTeacher", "/api/teacher/login").permitAll()
+                        "/api/teacher/register", "/api/teacher/postTeacher", "/api/teacher/login",
+                        "/api/admin/login").permitAll()
 
-                // Admins have no login yet, so these stay closed until one is added.
+                // Managing teachers and students (admin accounts come from AdminBootstrap)
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                 // Listing and looking up other people's accounts

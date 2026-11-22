@@ -4,17 +4,31 @@ package com.csit321G3G4.ByteBusters.Kasalig_bAI.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import com.csit321G3G4.ByteBusters.Kasalig_bAI.dto.LoginRequest;
+import com.csit321G3G4.ByteBusters.Kasalig_bAI.dto.LoginResponse;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.StudentEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.TeacherEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.service.AdminService;
+import com.csit321G3G4.ByteBusters.Kasalig_bAI.service.TokenService;
 import java.util.List;
 
+/** Login is open; everything else needs an admin login token (see SecurityConfig). */
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
 
     @Autowired
     private AdminService adminService;
+
+    @Autowired
+    private TokenService tokens;
+
+    // Login: body is { email, password }. Answers { token, expiresAt, user }, or 401 when the
+    // credentials are wrong. There is no admin sign-up; see AdminBootstrap.
+    @PostMapping("/login")
+    public LoginResponse login(@RequestBody LoginRequest req) {
+        return tokens.issue(adminService.login(req.email(), req.password()));
+    }
 
     // ============================== TEACHERS ==============================//
 

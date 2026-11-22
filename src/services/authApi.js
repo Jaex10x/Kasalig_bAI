@@ -2,13 +2,13 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
 
-// Account routes of the Spring backend (StudentController / TeacherController).
+// Account routes of the Spring backend (StudentController / TeacherController / AdminController).
 // The server's address comes from VITE_API_BASE_URL; see .env.example.
 export const AUTH_ENDPOINTS = {
   registerStudent: '/api/student/postStudent',
   studentLogin: '/api/student/login',
   teacherLogin: '/api/teacher/login',
-  // Not on the backend yet: SecurityConfig keeps /api/admin/** closed until an admin login exists.
+  // There is no admin sign-up: the backend creates the first admin from ADMIN_EMAIL / ADMIN_PASSWORD.
   adminLogin: '/api/admin/login',
   // Needs the login token: who the token belongs to (used to check a saved session on page load).
   me: '/api/auth/me',

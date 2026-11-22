@@ -61,7 +61,7 @@ export default function StudentDashboard() {
           <Avatar name={user.fullName} size={42} />
           <div>
             <p className="kd-profile-name">{user.fullName}</p>
-            <p className="kd-profile-sub">{user.course ?? 'Student'}</p>
+            <p className="kd-profile-sub">{user.program ?? 'Student'}</p>
           </div>
         </div>
 

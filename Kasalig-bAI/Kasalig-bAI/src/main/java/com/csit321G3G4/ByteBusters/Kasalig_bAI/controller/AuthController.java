@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.dto.AuthUser;
+import com.csit321G3G4.ByteBusters.Kasalig_bAI.service.AdminService;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.service.StudentService;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.service.TeacherService;
 
@@ -20,6 +21,9 @@ public class AuthController {
     @Autowired
     private TeacherService tserv;
 
+    @Autowired
+    private AdminService aserv;
+
     /**
      * The account the token belongs to. The frontend calls this on page load to check that a saved
      * token still works (401 when it has expired; 404 when the account was deleted).
@@ -28,6 +32,9 @@ public class AuthController {
     @GetMapping("/me")
     public AuthUser me(@AuthenticationPrincipal Jwt jwt) {
         int id = Access.id(jwt);
+        if (Access.hasRole(jwt, "admin")) {
+            return aserv.getAuthUser(id);
+        }
         return Access.hasRole(jwt, "teacher") ? tserv.getAuthUser(id) : sserv.getAuthUser(id);
     }
 }
