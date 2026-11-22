@@ -15,7 +15,7 @@ import { pointAtForm } from './pointAtForm';
 const INITIAL_FORM = {
   fullName: '',
   email: '',
-  course: '',
+  program: '',
   password: '',
 };
 
@@ -40,8 +40,8 @@ function validate(form) {
     errors.email = 'Enter a valid email (e.g. 2024-01530@cit.edu) or student ID.';
   }
 
-  if (!form.course.trim()) {
-    errors.course = 'Please select your course.';
+  if (!form.program.trim()) {
+    errors.program = 'Please select your course.';
   }
 
   if (!form.password) {
@@ -53,7 +53,7 @@ function validate(form) {
   return errors;
 }
 
-const FIELD_ORDER = ['fullName', 'email', 'course', 'password'];
+const FIELD_ORDER = ['fullName', 'email', 'program', 'password'];
 
 /** What the capybara says while each field is being filled in. */
 function fieldHint(field, firstName) {
@@ -64,7 +64,7 @@ function fieldHint(field, firstName) {
       return firstName
         ? `Nice to meet you, ${firstName}! Now your school email or student ID.`
         : 'Now your institutional email or student ID.';
-    case 'course':
+    case 'program':
       return 'Which course are you taking? Pick it from the list.';
     case 'password':
       return `Make a password with at least ${MIN_PASSWORD_LENGTH} characters. I won't peek! 🙈`;
@@ -87,9 +87,9 @@ function getCompanionState({ form, errors, focusedField, submitting, success, se
   }
   if (focusedField) {
     if (errors[focusedField]) return { mood: 'sad', message: errors[focusedField] };
-    // The capybara cheers for whichever course was just picked.
-    if (focusedField === 'course' && form.course) {
-      return { mood: 'happy', message: `${form.course}? Great choice! 🎓` };
+    // The capybara cheers for whichever program was just picked.
+    if (focusedField === 'program' && form.program) {
+      return { mood: 'happy', message: `${form.program}? Great choice! 🎓` };
     }
     return { mood: 'idle', message: fieldHint(focusedField, firstName) };
   }
@@ -146,7 +146,7 @@ export default function Registration({ onSubmit, onNavigate, onRegistered }) {
 
     const validationErrors = validate(form);
     setErrors(validationErrors);
-    setTouched({ fullName: true, email: true, course: true, password: true });
+    setTouched({ fullName: true, email: true, program: true, password: true });
     setAttempted(true);
     if (Object.keys(validationErrors).length > 0) return;
 
@@ -156,7 +156,7 @@ export default function Registration({ onSubmit, onNavigate, onRegistered }) {
     const payload = {
       fullName: form.fullName.trim(),
       email: form.email.trim(),
-      course: form.course.trim(),
+      program: form.program.trim(),
       password: form.password,
     };
 
@@ -236,7 +236,7 @@ export default function Registration({ onSubmit, onNavigate, onRegistered }) {
           placeholder="2024-01530@cit.edu"
         />
         <CoursePicker
-          {...fieldProps('course')}
+          {...fieldProps('program')}
           label="Course"
           options={COURSES}
           placeholder="Select your course"

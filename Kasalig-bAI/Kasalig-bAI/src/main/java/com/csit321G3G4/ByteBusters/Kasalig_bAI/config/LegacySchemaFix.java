@@ -54,5 +54,33 @@ public class LegacySchemaFix implements ApplicationRunner {
                 log.warn("Could not check {}.{}: {}", table, name, ex.getMessage());
             }
         }
+        renameColumn("student", "course", "program");
+    }
+
+    /**
+     * Moves the data of a column that the code renamed. ddl-auto=update has already created the
+     * new column (empty) by now, and it never drops the old one, so copy the values across and
+     * then drop the old column. Does nothing once the old column is gone.
+     */
+    private void renameColumn(String table, String oldName, String newName) {
+        try {
+            if (!columnExists(table, oldName) || !columnExists(table, newName)) {
+                return;
+            }
+            int copied = jdbc.update("UPDATE " + table + " SET " + newName + " = " + oldName
+                    + " WHERE " + newName + " IS NULL AND " + oldName + " IS NOT NULL");
+            jdbc.execute("ALTER TABLE " + table + " DROP COLUMN " + oldName);
+            log.info("Renamed {}.{} to {} ({} row(s) copied).", table, oldName, newName, copied);
+        } catch (RuntimeException ex) {
+            log.warn("Could not rename {}.{} to {}: {}", table, oldName, newName, ex.getMessage());
+        }
+    }
+
+    private boolean columnExists(String table, String name) {
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns "
+                        + "WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?",
+                Integer.class, table, name);
+        return count != null && count > 0;
     }
 }

@@ -40,7 +40,7 @@ public class StudentService {
             throw new AuthException(HttpStatus.CONFLICT, "An account with that email or student ID already exists.");
         }
         StudentEntity student = new StudentEntity(fullName, email, body.getYearLevel(), null);
-        student.setCourse(isBlank(body.getCourse()) ? null : body.getCourse().trim());
+        student.setProgram(isBlank(body.getProgram()) ? null : body.getProgram().trim());
         student.setPasswordHash(passwordHasher.hash(body.getPassword()));
         return srepo.save(student);
     }
@@ -61,7 +61,7 @@ public class StudentService {
 
     private static AuthUser toAuthUser(StudentEntity student) {
         return new AuthUser(student.getStudentId(), "student", student.getFullName(), student.getEmail(),
-                student.getCourse());
+                student.getProgram());
     }
 
     // READ ALL
@@ -99,8 +99,8 @@ public class StudentService {
         if (newDetails.getYearLevel() != null) {
             student.setYearLevel(newDetails.getYearLevel());
         }
-        if (newDetails.getCourse() != null) {
-            student.setCourse(isBlank(newDetails.getCourse()) ? null : newDetails.getCourse().trim());
+        if (newDetails.getProgram() != null) {
+            student.setProgram(isBlank(newDetails.getProgram()) ? null : newDetails.getProgram().trim());
         }
         if (!isBlank(newDetails.getPassword())) {
             student.setPasswordHash(passwordHasher.hash(newDetails.getPassword()));

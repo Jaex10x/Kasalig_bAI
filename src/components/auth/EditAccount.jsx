@@ -22,8 +22,8 @@ function validate(form, isStudent) {
     errors.email = 'Enter a valid email address.';
   }
 
-  if (isStudent && !form.course.trim()) {
-    errors.course = 'Please select your course.';
+  if (isStudent && !form.program.trim()) {
+    errors.program = 'Please select your course.';
   }
 
   return errors;
@@ -33,21 +33,21 @@ function validate(form, isStudent) {
  * Edit-account page (mock).
  *
  * Props:
- *  - user: current user { fullName, email, course?, role }
- *  - onSubmit({ fullName, email, course? }): returns (or resolves to) { ok, user?, error? }
+ *  - user: current user { fullName, email, program?, role }
+ *  - onSubmit({ fullName, email, program? }): returns (or resolves to) { ok, user?, error? }
  *  - onCancel(): go back to the previous screen
  *  - onNavigate(page): footer link
  */
 export default function EditAccount({ user, onSubmit, onCancel, onNavigate }) {
   const isStudent = user.role !== 'teacher';
-  // Keep a course saved before the dropdown existed selectable, even if it is not in the list.
+  // Keep a program saved before the dropdown existed selectable, even if it is not in the list.
   const courseOptions =
-    !user.course || COURSES.includes(user.course) ? COURSES : [user.course, ...COURSES];
+    !user.program || COURSES.includes(user.program) ? COURSES : [user.program, ...COURSES];
 
   const [form, setForm] = useState({
     fullName: user.fullName ?? '',
     email: user.email ?? '',
-    course: user.course ?? '',
+    program: user.program ?? '',
   });
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -78,7 +78,7 @@ export default function EditAccount({ user, onSubmit, onCancel, onNavigate }) {
 
     const validationErrors = validate(form, isStudent);
     setErrors(validationErrors);
-    setTouched({ fullName: true, email: true, course: true });
+    setTouched({ fullName: true, email: true, program: true });
     if (Object.keys(validationErrors).length > 0) return;
 
     setSubmitting(true);
@@ -89,7 +89,7 @@ export default function EditAccount({ user, onSubmit, onCancel, onNavigate }) {
       const result = await onSubmit({
         fullName: form.fullName.trim(),
         email: form.email.trim(),
-        ...(isStudent && { course: form.course.trim() }),
+        ...(isStudent && { program: form.program.trim() }),
       });
       if (!result?.ok) {
         setServerError(result?.error ?? 'Could not save your changes.');
@@ -142,7 +142,7 @@ export default function EditAccount({ user, onSubmit, onCancel, onNavigate }) {
         />
         {isStudent && (
           <SelectField
-            {...fieldProps('course')}
+            {...fieldProps('program')}
             label="Course"
             options={courseOptions}
             placeholder="Select your course"

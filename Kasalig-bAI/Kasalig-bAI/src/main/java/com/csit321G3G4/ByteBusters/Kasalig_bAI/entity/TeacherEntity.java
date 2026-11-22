@@ -3,7 +3,6 @@ package com.csit321G3G4.ByteBusters.Kasalig_bAI.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.TeacherEntity;
 
 @Entity
 @Table(name = "teacher")
@@ -13,6 +12,7 @@ public class TeacherEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int teacherId;
     private String fullName;
+    @Column(unique = true)
     private String email;
     /** The admin who manages this teacher. Null for a teacher who registered on their own. */
     @ManyToOne
@@ -36,7 +36,7 @@ public class TeacherEntity {
     }
 
     public int getTeacherId() { return teacherId; }
-    public void setId(int teacherId) { this.teacherId = teacherId; }
+    public void setTeacherId(int teacherId) { this.teacherId = teacherId; }
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
     public String getEmail() { return email; }

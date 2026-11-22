@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.csit321G3G4.ByteBusters.Kasalig_bAI.controller.AuthException;
+import com.csit321G3G4.ByteBusters.Kasalig_bAI.dto.AuthUser;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.AdminEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.StudentEntity;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.entity.TeacherEntity;
@@ -38,6 +40,30 @@ public class AdminService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Admin " + adminId + " not found"));
     }
 
+    //======= Admin login =========//
+
+    // Every failure gets the same answer, so the response never reveals whether the account exists.
+    public AuthUser login(String email, String password) {
+        AdminEntity admin = adminRepository.findByEmailIgnoreCase(normalize(email)).orElse(null);
+        if (admin == null || !passwordHasher.matches(password, admin.getPasswordHash())) {
+            throw new AuthException(HttpStatus.UNAUTHORIZED, "Invalid email or password.");
+        }
+        return toAuthUser(admin);
+    }
+
+    // The signed-in admin, for /api/auth/me
+    public AuthUser getAuthUser(int adminId) {
+        return toAuthUser(getAdmin(adminId));
+    }
+
+    private static AuthUser toAuthUser(AdminEntity admin) {
+        return new AuthUser(admin.getAdminId(), "admin", admin.getFullName(), admin.getEmail(), null);
+    }
+
+    private static String normalize(String email) {
+        return email == null ? "" : email.trim().toLowerCase();
+    }
+
     //======= Teachers =========//
 
     public List<TeacherEntity> getAllTeachers() {
@@ -52,7 +78,7 @@ public class AdminService {
         if (teacherRepository.existsByEmailIgnoreCase(body.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
         }
-        TeacherEntity teacher = new TeacherEntity(body.getFullName(), body.getEmail());
+        TeacherEntity teacher = new TeacherEntity(body.getFullName(), normalize(body.getEmail()));
         teacher.setAdmin(findAdmin(body.getAdmin()));
         teacher.setPasswordHash(passwordHasher.hashIfProvided(body.getPassword()));
         return teacherRepository.save(teacher);
@@ -66,7 +92,7 @@ public class AdminService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
         }
         teacher.setFullName(body.getFullName());
-        teacher.setEmail(body.getEmail());
+        teacher.setEmail(normalize(body.getEmail()));
         if (body.getAdmin() != null) {
             teacher.setAdmin(findAdmin(body.getAdmin()));
         }
@@ -105,7 +131,7 @@ public class AdminService {
         }
         StudentEntity student = new StudentEntity(
                 body.getFullName(),
-                body.getEmail(),
+                normalize(body.getEmail()),
                 body.getYearLevel(),
                 findTeacher(body.getTeacher())
         );
@@ -120,7 +146,7 @@ public class AdminService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
         }
         student.setFullName(body.getFullName());
-        student.setEmail(body.getEmail());
+        student.setEmail(normalize(body.getEmail()));
         student.setYearLevel(body.getYearLevel());
         if (body.getTeacher() != null) {
             student.setTeacher(findTeacher(body.getTeacher()));
