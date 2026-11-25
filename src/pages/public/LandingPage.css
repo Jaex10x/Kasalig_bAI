@@ -1223,76 +1223,52 @@
 .app-bubble-wrap:nth-child(2) { --float-delay: -1.2s; }
 .app-bubble-wrap:nth-child(3) { --float-delay: -2.4s; }
 
+/* Tile-less: only the 3D glyph floats */
 .app-bubble {
-  --tile-edge: rgba(0, 0, 0, 0.25);
   position: relative;
   width: 58px;
   height: 58px;
-  border-radius: 17px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: none;
   transform-style: preserve-3d;
-  /* Layered shadows: inner top highlight, inner bottom shade, solid "thickness" edge, soft drop */
-  box-shadow:
-    inset 0 2px 1px rgba(255, 255, 255, 0.45),
-    inset 0 -4px 8px rgba(0, 0, 0, 0.22),
-    0 5px 0 var(--tile-edge),
-    0 14px 22px rgba(0, 0, 0, 0.18);
   animation: appBubbleFloat 3.6s ease-in-out infinite;
   animation-delay: var(--float-delay);
   transition: transform 0.25s ease;
   cursor: default;
 }
 
-/* Glossy sheen across the top half */
-.app-bubble::before {
-  content: '';
-  position: absolute;
-  inset: 3px 4px 50% 4px;
-  border-radius: 14px 14px 40% 40%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0));
-  pointer-events: none;
-}
-
 .app-bubble svg {
   position: relative;
-  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.3));
+  width: 52px;
+  height: 52px;
+  /* Stacked drop-shadows give the glyph depth without a tile behind it */
+  filter:
+    drop-shadow(0 2px 1px rgba(0, 0, 0, 0.18))
+    drop-shadow(0 8px 10px rgba(0, 0, 0, 0.2));
   transform: translateZ(14px);
 }
 
 .app-bubble-wrap:hover .app-bubble {
   animation-play-state: paused;
-  transform: translateY(-10px) rotateX(12deg) rotateY(-12deg) scale(1.06);
+  transform: translateY(-10px) rotateX(12deg) rotateY(-12deg) scale(1.08);
 }
 
-/* Ground shadow shrinks as the tile rises */
+/* Ground shadow shrinks as the icon rises */
 .app-bubble-shadow {
-  width: 44px;
-  height: 8px;
-  margin-top: 12px;
+  width: 36px;
+  height: 7px;
+  margin-top: 8px;
   border-radius: 50%;
   background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0) 70%);
   animation: appBubbleShadow 3.6s ease-in-out infinite;
   animation-delay: var(--float-delay);
 }
 
-.bubble-understand {
-  background: linear-gradient(145deg, #334155 0%, #1e293b 55%, #0f172a 100%);
-  --tile-edge: #0b1120;
-}
-.bubble-improve {
-  background: linear-gradient(145deg, #34d399 0%, #10b981 50%, #047857 100%);
-  --tile-edge: #065f46;
-}
-.bubble-excel {
-  background: linear-gradient(145deg, #a78bfa 0%, #7c3aed 55%, #5b21b6 100%);
-  --tile-edge: #4c1d95;
-}
-
 @keyframes appBubbleFloat {
-  0%, 100% { transform: translateY(0) rotateX(6deg) rotateY(-6deg); }
-  50%      { transform: translateY(-9px) rotateX(-4deg) rotateY(6deg); }
+  0%, 100% { transform: translateY(0) rotate(-3deg) rotateX(6deg) rotateY(-6deg); }
+  50%      { transform: translateY(-12px) rotate(3deg) rotateX(-4deg) rotateY(6deg); }
 }
 
 @keyframes appBubbleShadow {

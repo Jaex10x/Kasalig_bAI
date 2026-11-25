@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import useAuth from '../../context/useAuth';
 import { GAP_TYPES, SEVERITIES, TOPICS, competenciesOf } from '../../data/curriculum';
-import { learningPath, masteryLevel, statusFromScores } from '../../lib/engine';
-import { CLASS_NAME, PASSING_GRADE, RISK_LABELS, riskProfile, studentById } from '../../data/classData';
+import { learningPath, masteryLevel } from '../../lib/engine';
+import { CLASS_NAME, PASSING_GRADE, RISK_LABELS, pctText, riskProfile } from '../../data/classData';
 import { formatDate } from '../../hooks/dashboardHooks';
-import { useClassData } from '../../store/learningStore';
+import { useClassData, useClassRoster } from '../../store/learningStore';
 import { Avatar, Bar, EmptyState, LevelChip } from '../../components/dashboard/DashWidgets';
 import { BackIcon, PrintIcon, TrashIcon } from '../../components/dashboard/DashIcons';
 
@@ -20,16 +20,81 @@ const STATUSES = {
 const today = () => new Date().toISOString().slice(0, 10);
 const EMPTY_NOTE = { date: '', action: ACTIONS[0], notes: '', followUp: '' };
 
+/** A 0-100 number from a form field, null when blank, or undefined when invalid. */
+function parsePercent(text) {
+  const t = String(text ?? '').trim();
+  if (t === '') return null;
+  const n = Number(t);
+  return Number.isFinite(n) && n >= 0 && n <= 100 ? Math.round(n * 10) / 10 : undefined;
+}
+
+/** Class standing and attendance: not in any quiz, so the teacher enters them for the risk check. */
+function StandingForm({ student, onSave }) {
+  const [grade, setGrade] = useState(student.grade ?? '');
+  const [attendance, setAttendance] = useState(student.attendance ?? '');
+  const [error, setError] = useState('');
+  const [saved, setSaved] = useState(false);
+
+  const submit = (e) => {
+    e.preventDefault();
+    const g = parsePercent(grade);
+    const a = parsePercent(attendance);
+    if (g === undefined || a === undefined) {
+      setError('Enter numbers from 0 to 100, or leave a field blank.');
+      setSaved(false);
+      return;
+    }
+    onSave({ grade: g, attendance: a });
+    setError('');
+    setSaved(true);
+  };
+
+  return (
+    <form className="kd-form-grid" onSubmit={submit} noValidate>
+      <label className="kd-field">
+        <span>Class standing (0–100)</span>
+        <input
+          className="kd-input"
+          inputMode="decimal"
+          value={grade}
+          onChange={(e) => { setGrade(e.target.value); setSaved(false); }}
+          placeholder="e.g. 82"
+          aria-invalid={Boolean(error)}
+        />
+      </label>
+      <label className="kd-field">
+        <span>Attendance (% of days present)</span>
+        <input
+          className="kd-input"
+          inputMode="decimal"
+          value={attendance}
+          onChange={(e) => { setAttendance(e.target.value); setSaved(false); }}
+          placeholder="e.g. 95"
+          aria-invalid={Boolean(error)}
+        />
+      </label>
+      <div className="kd-field-wide">
+        {error && <small className="kd-field-error" role="alert">{error}</small>}
+        {saved && !error && <small className="kd-muted" role="status">Saved. The risk check uses the new values.</small>}
+      </div>
+      <div className="kd-field-wide">
+        <button type="submit" className="kd-btn kd-btn-dark">Save standing</button>
+      </div>
+    </form>
+  );
+}
+
 /** One student's progress report (printable for parent–teacher meetings) and intervention log. */
 export default function StudentReport() {
   const { studentId } = useParams();
   const { user } = useAuth();
-  const { interventions, resources, addIntervention, updateIntervention, deleteIntervention } = useClassData();
+  const { interventions, resources, addIntervention, updateIntervention, deleteIntervention, setStanding } = useClassData();
+  const { students } = useClassRoster();
   const [form, setForm] = useState(() => ({ ...EMPTY_NOTE, date: today() }));
   const [error, setError] = useState('');
   const [preparedOn] = useState(() => Date.now());
 
-  const student = studentById(studentId);
+  const student = students.find((s) => String(s.id) === studentId);
   if (!student) {
     return (
       <section className="kd-stage kd-page">
@@ -41,10 +106,13 @@ export default function StudentReport() {
   const risk = riskProfile(student);
   const level = RISK_LABELS[risk.level];
   const notes = interventions[student.id] ?? [];
-  // The same learning path a student would get, worked out from this student's topic scores.
-  const plan = learningPath(statusFromScores(student.scores), {}, resources);
-  const strengths = TOPICS.filter((t) => student.scores[t.id] >= 80);
-  const needs = TOPICS.filter((t) => student.scores[t.id] < 65).sort((a, b) => student.scores[a.id] - student.scores[b.id]);
+  // The same learning path the student sees, from their own results (gap types come from their answers).
+  const plan = learningPath(student.status, {}, resources);
+  const score = (t) => student.scores[t.id];
+  const strengths = TOPICS.filter((t) => score(t) >= 80);
+  const needs = TOPICS.filter((t) => score(t) !== undefined && score(t) < 65).sort((a, b) => score(a) - score(b));
+  const recent = [...student.attempts].sort((a, b) => b.takenAt - a.takenAt).slice(0, 6);
+  const trend = risk.quiz !== null && student.prevQuizAvg !== null ? risk.quiz - student.prevQuizAvg : null;
 
   const submit = (e) => {
     e.preventDefault();
@@ -76,7 +144,8 @@ export default function StudentReport() {
               <p className="kd-eyebrow">Learner progress report</p>
               <h1>{student.name}</h1>
               <p className="kd-muted">
-                {CLASS_NAME} · prepared by {user.fullName} · {formatDate(preparedOn, { day: 'numeric', month: 'long', year: 'numeric' })}
+                {[student.program, CLASS_NAME].filter(Boolean).join(' · ')} · prepared by {user.fullName} ·{' '}
+                {formatDate(preparedOn, { day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
             </div>
           </div>
@@ -90,25 +159,25 @@ export default function StudentReport() {
         <div className="kd-report-stats">
           <div>
             <small>Quiz mastery</small>
-            <strong>{risk.quiz}%</strong>
-            <LevelChip pct={risk.quiz} />
+            <strong>{pctText(risk.quiz)}</strong>
+            {risk.quiz === null ? <span className="kd-muted kd-small">No quiz yet</span> : <LevelChip pct={risk.quiz} />}
           </div>
           <div>
             <small>Class standing</small>
-            <strong>{student.grade}</strong>
-            <span className="kd-muted kd-small">{student.grade >= PASSING_GRADE ? 'Passing' : `Below ${PASSING_GRADE}`}</span>
+            <strong>{student.grade ?? '—'}</strong>
+            <span className="kd-muted kd-small">
+              {student.grade === null ? 'Not entered' : student.grade >= PASSING_GRADE ? 'Passing' : `Below ${PASSING_GRADE}`}
+            </span>
           </div>
           <div>
             <small>Attendance</small>
-            <strong>{student.attendance}%</strong>
+            <strong>{pctText(student.attendance)}</strong>
+            {student.attendance === null && <span className="kd-muted kd-small">Not entered</span>}
           </div>
           <div>
             <small>Since last period</small>
-            <strong>
-              {risk.quiz - student.prevQuizAvg >= 0 ? '+' : ''}
-              {risk.quiz - student.prevQuizAvg}
-            </strong>
-            <span className="kd-muted kd-small">quiz points</span>
+            <strong>{trend === null ? '—' : `${trend >= 0 ? '+' : ''}${trend}`}</strong>
+            <span className="kd-muted kd-small">{trend === null ? 'needs results from 2+ weeks ago' : 'quiz points'}</span>
           </div>
         </div>
 
@@ -131,11 +200,17 @@ export default function StudentReport() {
                   </td>
                   <td className="kd-code">{competenciesOf(t.id).map((c) => c.code).join(', ')}</td>
                   <td className="kd-score-cell">
-                    <span>{student.scores[t.id]}%</span>
-                    <Bar pct={student.scores[t.id]} />
+                    <span>{pctText(score(t))}</span>
+                    {score(t) !== undefined && <Bar pct={score(t)} />}
                   </td>
                   <td>
-                    <LevelChip pct={student.scores[t.id]} />
+                    {score(t) === undefined ? (
+                      <span className="kd-chip" style={{ color: masteryLevel(null).color, background: masteryLevel(null).tint }}>
+                        {masteryLevel(null).label}
+                      </span>
+                    ) : (
+                      <LevelChip pct={score(t)} />
+                    )}
                   </td>
                 </tr>
               ))}
@@ -147,7 +222,7 @@ export default function StudentReport() {
           <section className="kd-report-section">
             <h2>Strengths</h2>
             {strengths.length ? (
-              <ul className="kd-plain-list">{strengths.map((t) => <li key={t.id}>{t.name} ({student.scores[t.id]}%)</li>)}</ul>
+              <ul className="kd-plain-list">{strengths.map((t) => <li key={t.id}>{t.name} ({score(t)}%)</li>)}</ul>
             ) : (
               <p className="kd-muted">No topic at mastery (80%) yet.</p>
             )}
@@ -158,7 +233,8 @@ export default function StudentReport() {
               <ul className="kd-plain-list">
                 {needs.map((t) => (
                   <li key={t.id}>
-                    {t.name} ({student.scores[t.id]}%){t.prereqs.some((p) => student.scores[p] < 60) ? ', start with its prerequisites' : ''}
+                    {t.name} ({score(t)}%)
+                    {t.prereqs.some((p) => student.scores[p] !== undefined && student.scores[p] < 60) ? ', start with its prerequisites' : ''}
                   </li>
                 ))}
               </ul>
@@ -168,10 +244,43 @@ export default function StudentReport() {
           </section>
         </div>
 
+        {recent.length > 0 && (
+          <section className="kd-report-section">
+            <h2>Recent results</h2>
+            <table className="kd-table">
+              <thead>
+                <tr>
+                  <th scope="col">Date</th>
+                  <th scope="col">Quiz</th>
+                  <th scope="col">Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recent.map((a) => (
+                  <tr key={a.id}>
+                    <td>{formatDate(a.takenAt, { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                    <td>
+                      {a.title}
+                      {a.kind === 'check' && (
+                        <span className="kd-muted kd-small"> · {a.passed ? 'passed, gap closed' : 'not passed'}</span>
+                      )}
+                    </td>
+                    <td>
+                      {a.correct}/{a.total} ({a.pct}%)
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        )}
+
         <section className="kd-report-section">
           <h2>Recommended next steps</h2>
           {plan.length === 0 ? (
-            <p className="kd-muted">No open gaps: every topic is at mastery.</p>
+            <p className="kd-muted">
+              {Object.keys(student.scores).length ? 'No open gaps: every tested topic is at mastery.' : 'No results yet, so no gaps to work on.'}
+            </p>
           ) : (
             <ol className="kd-plan">
               {plan.map((item) => {
@@ -238,7 +347,9 @@ export default function StudentReport() {
                           ))}
                         </select>
                       </label>
-                      <span className="kd-muted kd-small">Quiz mastery then: {n.quizAtTime}% · now {risk.quiz}%</span>
+                      <span className="kd-muted kd-small">
+                        Quiz mastery then: {pctText(n.quizAtTime)} · now {pctText(risk.quiz)}
+                      </span>
                       <button
                         type="button"
                         className="kd-icon-btn kd-icon-btn-sm"
@@ -256,6 +367,16 @@ export default function StudentReport() {
         </section>
 
         <p className="kd-print-only kd-muted kd-small">Generated by Kasalig bAI. Scores reflect the latest diagnostic and quiz results ({masteryLevel(risk.quiz).label}).</p>
+      </article>
+
+      <article className="kd-card kd-no-print">
+        <header className="kd-card-head">
+          <div>
+            <h2>Grade and attendance</h2>
+            <p>Used with quiz results to flag students who are falling behind. Leave blank if unknown.</p>
+          </div>
+        </header>
+        <StandingForm key={student.id} student={student} onSave={(standing) => setStanding(student.id, standing)} />
       </article>
 
       <article className="kd-card kd-no-print">

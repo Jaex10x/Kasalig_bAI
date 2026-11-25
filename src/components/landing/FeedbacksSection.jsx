@@ -286,7 +286,7 @@ const FeedbackCard = ({ item, liked, onLike, ariaHidden }) => (
           aria-label={`Like ${item.name}'s feedback`}
           tabIndex={ariaHidden ? -1 : undefined}
         >
-          <HeartIcon size={16} color={liked ? '#C2410C' : '#DE7A40'} />
+          <HeartIcon size={16} color={liked ? '#B91C1C' : '#EF4444'} />
           <span className="like-count">{item.likes.toLocaleString()}</span>
         </button>
       </div>

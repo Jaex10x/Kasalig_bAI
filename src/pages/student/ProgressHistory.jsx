@@ -131,7 +131,7 @@ export default function ProgressHistory() {
             type="button"
             className="kd-btn kd-btn-ghost kd-btn-sm"
             onClick={() => {
-              if (window.confirm('Delete your saved quiz history and practice progress in this browser?')) student.clearHistory();
+              if (window.confirm('Delete your saved quiz history and practice progress? Your teacher will no longer see these results.')) student.clearHistory();
             }}
           >
             Clear history

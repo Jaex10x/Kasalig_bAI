@@ -1,20 +1,25 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CLASS_STUDENTS, RISK_LABELS, riskProfile } from '../../data/classData';
-import { useClassData } from '../../store/learningStore';
+import { RISK_LABELS, riskProfile } from '../../data/classData';
+import { formatDate } from '../../hooks/dashboardHooks';
+import { useClassData, useClassRoster } from '../../store/learningStore';
 import { Avatar, LevelChip } from '../../components/dashboard/DashWidgets';
 import { ArrowIcon } from '../../components/dashboard/DashIcons';
 
 /** The class roster: risk, grades, attendance and intervention notes, with a report per student. */
 export default function TeacherStudents() {
   const { interventions } = useClassData();
+  const { students } = useClassRoster();
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
 
-  const rows = CLASS_STUDENTS.map((s) => ({ ...s, risk: riskProfile(s), notes: interventions[s.id] ?? [] }))
+  const q = query.trim().toLowerCase();
+  const rows = students
+    .map((s) => ({ ...s, risk: riskProfile(s), notes: interventions[s.id] ?? [] }))
     .filter((s) => (filter === 'risk' ? s.risk.level : true))
-    .filter((s) => s.name.toLowerCase().includes(query.trim().toLowerCase()))
-    .sort((a, b) => b.risk.score - a.risk.score);
+    .filter((s) => s.name.toLowerCase().includes(q) || (s.email ?? '').toLowerCase().includes(q))
+    // Highest risk first; students with no data at all go last.
+    .sort((a, b) => Number(b.risk.hasData) - Number(a.risk.hasData) || b.risk.score - a.risk.score || a.name.localeCompare(b.name));
 
   return (
     <section className="kd-stage kd-page">
@@ -50,6 +55,7 @@ export default function TeacherStudents() {
                 <th scope="col">Quiz mastery</th>
                 <th scope="col">Grade</th>
                 <th scope="col">Attendance</th>
+                <th scope="col">Last quiz</th>
                 <th scope="col">Risk</th>
                 <th scope="col">Interventions</th>
                 <th scope="col"><span className="kd-sr-only">Report</span></th>
@@ -67,17 +73,26 @@ export default function TeacherStudents() {
                       </span>
                     </td>
                     <td>
-                      {s.risk.quiz}% <LevelChip pct={s.risk.quiz} />
+                      {s.risk.quiz === null ? (
+                        <span className="kd-muted">No quiz yet</span>
+                      ) : (
+                        <>
+                          {s.risk.quiz}% <LevelChip pct={s.risk.quiz} />
+                        </>
+                      )}
                     </td>
-                    <td>{s.grade}</td>
-                    <td>{s.attendance}%</td>
+                    <td>{s.grade ?? <span className="kd-muted">—</span>}</td>
+                    <td>{s.attendance === null ? <span className="kd-muted">—</span> : `${s.attendance}%`}</td>
+                    <td>{s.lastActive ? formatDate(s.lastActive) : <span className="kd-muted">—</span>}</td>
                     <td>
                       {level ? (
                         <span className="kd-chip" style={{ color: level.color, background: level.tint }}>
                           {level.label} · {s.risk.score}
                         </span>
-                      ) : (
+                      ) : s.risk.hasData ? (
                         <span className="kd-muted">On track · {s.risk.score}</span>
+                      ) : (
+                        <span className="kd-muted">No data yet</span>
                       )}
                     </td>
                     <td>{s.notes.length ? `${s.notes.length} (${worked} worked)` : '—'}</td>
@@ -92,7 +107,9 @@ export default function TeacherStudents() {
             </tbody>
           </table>
         </div>
-        {rows.length === 0 && <p className="kd-empty">No students match.</p>}
+        {rows.length === 0 && (
+          <p className="kd-empty">{students.length ? 'No students match.' : 'No students have registered yet.'}</p>
+        )}
       </article>
     </section>
   );

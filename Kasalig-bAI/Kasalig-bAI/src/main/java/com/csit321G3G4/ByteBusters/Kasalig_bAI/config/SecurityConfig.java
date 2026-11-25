@@ -53,6 +53,17 @@ public class SecurityConfig {
                 .requestMatchers("/api/teacher/getAllStudents", "/api/teacher/getStudents/*",
                         "/api/teacher/postStudents", "/api/teacher/putStudent/*")
                         .hasAnyRole("TEACHER", "ADMIN")
+                // Learning data (LearningDataController). Reading a student's results, the class
+                // content and the sections is open to any signed-in user; the controller limits a
+                // student to their own results and hides staff-only class records from students.
+                .requestMatchers(HttpMethod.GET, "/api/learning/roster").hasAnyRole("TEACHER", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/learning/class/**").hasAnyRole("TEACHER", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/learning/class/**").hasAnyRole("TEACHER", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/learning/school/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/learning/school/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/learning/students/*/attempts", "/api/learning/students/*/reset")
+                        .hasRole("STUDENT")
+                .requestMatchers(HttpMethod.PUT, "/api/learning/students/*/state").hasRole("STUDENT")
 
                 .anyRequest().authenticated())
             .oauth2ResourceServer(oauth -> oauth
