@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, NavLink, Outlet, matchPath, useLocation, useNavigate } from 'react-router-dom';
 import useAuth from '../../context/useAuth';
-import { Avatar } from './DashWidgets';
+import { useStaffGate, useStudentGate, useSyncError } from '../../store/learningStore';
+import { Avatar, EmptyState } from './DashWidgets';
 import { RecBadge } from './Recommendations';
 import {
   ChartIcon,
@@ -189,10 +190,63 @@ export default function DashboardLayout() {
               {flash.message}
             </p>
           )}
-          <Outlet />
+          <SyncErrorToast />
+          {/* The key remounts the gate if the role ever changes, so each role keeps its own fixed hooks. */}
+          {user.role === 'student' ? <StudentGate key="student" /> : <StaffGate key="staff" />}
         </main>
       </div>
     </div>
+  );
+}
+
+/* --- Loading the saved data before showing a page ----------------------------- */
+
+function StudentGate() {
+  return <Gate {...useStudentGate()} />;
+}
+
+function StaffGate() {
+  return <Gate {...useStaffGate()} />;
+}
+
+/** Shows the page once its data has loaded from the server, with a retry if that failed. */
+function Gate({ status, error, retry }) {
+  if (status === 'ready') return <Outlet />;
+  if (status === 'error') {
+    return (
+      <section className="kd-stage kd-page">
+        <EmptyState
+          icon="📡"
+          title="Could not load your data"
+          action={
+            <button type="button" className="kd-btn kd-btn-dark" onClick={retry}>
+              Try again
+            </button>
+          }
+        >
+          {error} Check that the Kasalig bAI server is running.
+        </EmptyState>
+      </section>
+    );
+  }
+  return (
+    <section className="kd-stage kd-page" aria-busy="true">
+      <EmptyState icon="⏳" title="Loading your data…" />
+    </section>
+  );
+}
+
+/** A save that failed: the page has already been put back to what the server has. */
+function SyncErrorToast() {
+  const { message, dismiss } = useSyncError();
+  if (!message) return null;
+  return (
+    <p className="kd-toast is-error" role="alert">
+      {message}{' '}
+      <button type="button" className="kd-link-btn" onClick={dismiss}>
+        Dismiss
+      </button>
+    </p>
   );
 }
 

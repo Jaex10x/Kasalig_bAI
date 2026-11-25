@@ -1,8 +1,8 @@
 import useAuth from '../../context/useAuth';
 import { COMPETENCIES, DIAGNOSTIC, QUESTION_BANK, SUBJECTS, topicById, topicsOf } from '../../data/curriculum';
 import { MASTERY, masteryLevel } from '../../lib/engine';
-import { topicAverage } from '../../data/classData';
-import { useClassData } from '../../store/learningStore';
+import { pctText, topicAverage } from '../../data/classData';
+import { useClassData, useClassRoster } from '../../store/learningStore';
 import { LevelChip } from '../../components/dashboard/DashWidgets';
 
 /**
@@ -12,13 +12,14 @@ import { LevelChip } from '../../components/dashboard/DashWidgets';
 export default function CurriculumMap() {
   const { user } = useAuth();
   const { quizzes, taught, setTaught } = useClassData();
+  const { students } = useClassRoster();
   const canEdit = user.role === 'teacher';
 
   const published = quizzes.filter((q) => q.published);
   const rows = COMPETENCIES.map((c) => {
     const inDiagnostic = QUESTION_BANK.filter((q) => q.competencyId === c.id && DIAGNOSTIC.questionIds.includes(q.id)).length;
     const inQuizzes = published.reduce((n, q) => n + q.questions.filter((x) => x.competencyId === c.id).length, 0);
-    const mastery = topicAverage(c.topicId);
+    const mastery = topicAverage(students, c.topicId);
     return { ...c, topic: topicById(c.topicId), tested: inDiagnostic + inQuizzes, inDiagnostic, inQuizzes, mastery, isTaught: Boolean(taught[c.id]) };
   });
 
@@ -26,7 +27,7 @@ export default function CurriculumMap() {
     total: rows.length,
     taught: rows.filter((r) => r.isTaught).length,
     tested: rows.filter((r) => r.tested > 0).length,
-    mastered: rows.filter((r) => r.mastery >= MASTERY).length,
+    mastered: rows.filter((r) => r.mastery !== null && r.mastery >= MASTERY).length,
   };
   const gaps = rows.filter((r) => r.isTaught && r.tested === 0);
   const untaughtTested = rows.filter((r) => !r.isTaught && r.tested > 0);
@@ -121,9 +122,13 @@ export default function CurriculumMap() {
                         )}
                       </td>
                       <td>
-                        <span className="kd-mastery-cell">
-                          {r.mastery}% <LevelChip pct={r.mastery} />
-                        </span>
+                        {r.mastery === null ? (
+                          <span className="kd-muted">No results yet</span>
+                        ) : (
+                          <span className="kd-mastery-cell">
+                            {pctText(r.mastery)} <LevelChip pct={r.mastery} />
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -132,7 +137,7 @@ export default function CurriculumMap() {
           </div>
         </article>
       ))}
-      <p className="kd-muted kd-small">Codes follow the DepEd MELC format; confirm them against the official list for your grade level. Class mastery uses the sample section until real results are available.</p>
+      <p className="kd-muted kd-small">Codes follow the DepEd MELC format; confirm them against the official list for your grade level. Class mastery is the average of every student tested on the topic.</p>
     </section>
   );
 }

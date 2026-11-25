@@ -4,11 +4,10 @@ import useAuth from '../../context/useAuth';
 import Capybara from '../../components/capybara/Capybara';
 import { TOPICS } from '../../data/curriculum';
 import { masteryLevel } from '../../lib/engine';
-import { CLASS_STUDENTS, RISK_LABELS, atRiskStudents, classAverage, heatColor, quizAverage, topicAverage } from '../../data/classData';
-import { TEACHER_SECTION_ID } from '../../data/schoolData';
+import { RISK_LABELS, atRiskStudents, classAverage, heatColor, pctText, quizAverage, topicAverage } from '../../data/classData';
 import { greeting } from '../../hooks/dashboardHooks';
-import { useClassData, useSchoolData } from '../../store/learningStore';
-import { Avatar, MasteryRing, SampleNotice } from '../../components/dashboard/DashWidgets';
+import { useClassData, useClassRoster, useSchoolData } from '../../store/learningStore';
+import { Avatar, EmptyState, MasteryRing, SampleNotice } from '../../components/dashboard/DashWidgets';
 import { AlertIcon, ArrowIcon, LevelIcon, StarIcon, UserIcon } from '../../components/dashboard/DashIcons';
 
 export default function TeacherDashboard() {
@@ -16,16 +15,22 @@ export default function TeacherDashboard() {
   const navigate = useNavigate();
   const school = useSchoolData();
   const { interventions } = useClassData();
+  const { students: roster, sample } = useClassRoster();
   const [sortBy, setSortBy] = useState('name'); // 'name' | 'average'
 
-  const section = school.classes.find((c) => c.id === TEACHER_SECTION_ID);
+  // The section this teacher advises, if the admin has set one up.
+  const section = school.classes.find((c) => c.adviser?.trim().toLowerCase() === user.fullName.trim().toLowerCase());
   const className = section ? `Grade ${section.gradeLevel} – ${section.name}` : 'My class';
-  const atRisk = atRiskStudents();
-  const avg = classAverage();
-  const topicAverages = TOPICS.map((t) => ({ ...t, avg: topicAverage(t.id) })).sort((a, b) => a.avg - b.avg);
-  const weakest = topicAverages[0];
-  const students = [...CLASS_STUDENTS].sort((a, b) =>
-    sortBy === 'average' ? quizAverage(a) - quizAverage(b) : a.name.localeCompare(b.name)
+  const atRisk = atRiskStudents(roster);
+  const avg = classAverage(roster);
+  const tested = roster.filter((s) => quizAverage(s) !== null);
+  // Weakest first; topics nobody has been tested on go last.
+  const topicAverages = TOPICS.map((t) => ({ ...t, avg: topicAverage(roster, t.id) })).sort(
+    (a, b) => (a.avg ?? 101) - (b.avg ?? 101)
+  );
+  const weakest = topicAverages[0].avg !== null ? topicAverages[0] : null;
+  const students = [...roster].sort((a, b) =>
+    sortBy === 'average' ? (quizAverage(a) ?? 101) - (quizAverage(b) ?? 101) : a.name.localeCompare(b.name)
   );
 
   return (
@@ -42,13 +47,19 @@ export default function TeacherDashboard() {
         <p className="kd-eyebrow">{greeting()},</p>
         <h1 className="kd-title">Here&rsquo;s your class at a glance.</h1>
         <p className="kd-lede">Which topics the class is stuck on, and who to check in with first.</p>
-        <SampleNotice>Sample roster, grades and attendance until the backend sends real class data.</SampleNotice>
+        {sample && <SampleNotice>Preview mode: a sample class, since there is no backend to load real students from.</SampleNotice>}
 
         <div className="kd-side-head">
           <h2>At-risk alerts</h2>
           <span className="kd-count is-alert">{atRisk.length}</span>
         </div>
-        <p className="kd-muted kd-small kd-risk-explain">Combines quiz mastery, class standing, attendance and recent trend.</p>
+        <p className="kd-muted kd-small kd-risk-explain">
+          Combines quiz mastery, open critical gaps, class standing, attendance and recent trend. Enter grades and attendance on each
+          student&rsquo;s report.
+        </p>
+        {atRisk.length === 0 && (
+          <p className="kd-muted kd-small">{tested.length ? 'No one is flagged right now.' : 'Alerts appear once students take a quiz.'}</p>
+        )}
 
         <ul className="kd-gap-list">
           {atRisk.map((s, i) => {
@@ -86,7 +97,7 @@ export default function TeacherDashboard() {
             <h2 className="kd-hero-title">Class mastery overview</h2>
             <ul className="kd-hero-meta">
               <li>
-                <UserIcon size={17} /> {CLASS_STUDENTS.length} students
+                <UserIcon size={17} /> {roster.length} students · {tested.length} with results
               </li>
               <li>
                 <AlertIcon size={17} /> {atRisk.length} flagged
@@ -105,14 +116,14 @@ export default function TeacherDashboard() {
               <path d="M40 300c60-30 90 20 150-10s70-110 140-120" fill="none" stroke="#f6a23c" strokeWidth="4" strokeLinecap="round" />
             </svg>
             <div className="kd-hero-ring">
-              <MasteryRing value={avg} size={170} label="class average" />
+              <MasteryRing value={avg ?? 0} size={170} label="class average" />
             </div>
           </div>
         </article>
 
         <Link to="/dashboard/quizzes/new" className="kd-cta">
-          <span className="kd-cta-label">Weakest topic · {weakest.avg}%</span>
-          <span className="kd-cta-title">Build a quiz on {weakest.name}</span>
+          <span className="kd-cta-label">{weakest ? `Weakest topic · ${weakest.avg}%` : 'No results yet'}</span>
+          <span className="kd-cta-title">{weakest ? `Build a quiz on ${weakest.name}` : 'Build your first quiz'}</span>
           <span className="kd-cta-sub">Tag each question to a competency, or draft some with the generator</span>
           <span className="kd-cta-go" aria-hidden="true">
             <ArrowIcon size={20} />
@@ -131,10 +142,14 @@ export default function TeacherDashboard() {
                 </span>
                 <span className="kd-topic-text">
                   <strong>{t.name}</strong>
-                  <small>{CLASS_STUDENTS.filter((s) => s.scores[t.id] < 50).length} students below 50%</small>
+                  <small>
+                    {t.avg === null
+                      ? 'Not tested yet'
+                      : `${roster.filter((s) => s.scores[t.id] !== undefined && s.scores[t.id] < 50).length} students below 50%`}
+                  </small>
                 </span>
                 <span className="kd-topic-score">
-                  <StarIcon size={20} /> {t.avg}%
+                  <StarIcon size={20} /> {pctText(t.avg)}
                 </span>
               </Link>
             </li>
@@ -157,6 +172,11 @@ export default function TeacherDashboard() {
             </div>
           </header>
 
+          {roster.length === 0 ? (
+            <EmptyState icon="🧑‍🎓" title="No students yet">
+              Students appear here as soon as they register. Their scores fill in after their first quiz.
+            </EmptyState>
+          ) : (
           <div className="kd-heat-scroll">
             <table className="kd-heat-table">
               <thead>
@@ -181,14 +201,18 @@ export default function TeacherDashboard() {
                       const c = heatColor(s.scores[t.id]);
                       return (
                         <td key={t.id}>
-                          <span className="kd-heat-cell" style={{ background: c.bg, color: c.fg }}>
-                            {s.scores[t.id]}
+                          <span
+                            className="kd-heat-cell"
+                            style={{ background: c.bg, color: c.fg }}
+                            title={s.scores[t.id] === undefined ? 'Not tested yet' : undefined}
+                          >
+                            {s.scores[t.id] ?? '—'}
                           </span>
                         </td>
                       );
                     })}
                     <td>
-                      <strong className="kd-heat-avg">{quizAverage(s)}%</strong>
+                      <strong className="kd-heat-avg">{pctText(quizAverage(s))}</strong>
                     </td>
                   </tr>
                 ))}
@@ -198,16 +222,17 @@ export default function TeacherDashboard() {
                   <th scope="row">Class average</th>
                   {TOPICS.map((t) => (
                     <td key={t.id}>
-                      <strong className="kd-heat-avg">{topicAverage(t.id)}%</strong>
+                      <strong className="kd-heat-avg">{pctText(t.avg)}</strong>
                     </td>
                   ))}
                   <td>
-                    <strong className="kd-heat-avg">{avg}%</strong>
+                    <strong className="kd-heat-avg">{pctText(avg)}</strong>
                   </td>
                 </tr>
               </tfoot>
             </table>
           </div>
+          )}
 
           <ul className="kd-heat-legend" aria-label="Colour key">
             <li><span style={{ background: '#f9cdc6' }} /> Below 50</li>
