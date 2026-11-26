@@ -3,6 +3,8 @@ package com.csit321G3G4.ByteBusters.Kasalig_bAI.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.dto.LoginRequest;
 import com.csit321G3G4.ByteBusters.Kasalig_bAI.dto.LoginResponse;
@@ -44,8 +46,8 @@ public class AdminController {
 
     @PostMapping("/postTeachers")
     @ResponseStatus(HttpStatus.CREATED)
-    public TeacherEntity postTeacher(@RequestBody TeacherEntity body) {
-        return adminService.postTeacher(body);
+    public TeacherEntity postTeacher(@AuthenticationPrincipal Jwt jwt, @RequestBody TeacherEntity body) {
+        return adminService.postTeacher(body, Access.id(jwt));
     }
 
     @PutMapping("/putTeacher/{teacherId}")

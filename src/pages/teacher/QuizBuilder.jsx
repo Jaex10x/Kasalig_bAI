@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom';
 import { QUESTION_TYPE_LABELS, topicById } from '../../data/curriculum';
 import { formatDate } from '../../hooks/dashboardHooks';
 import { useClassData } from '../../store/learningStore';
-import { EmptyState } from '../../components/dashboard/DashWidgets';
+import { EmptyState, SectionTabs } from '../../components/dashboard/DashWidgets';
+import { TEACHER_TABS } from '../../components/dashboard/teacherTabs';
 import { PencilIcon, PlusIcon, TrashIcon } from '../../components/dashboard/DashIcons';
 
 /** The teacher's quizzes: create, edit, publish to students, delete. */
@@ -22,6 +23,7 @@ export default function QuizBuilder() {
           <PlusIcon size={18} /> New quiz
         </Link>
       </header>
+      <SectionTabs tabs={TEACHER_TABS.assessments} label="Assessments" />
 
       {sorted.length === 0 ? (
         <EmptyState icon="📝" title="No quizzes yet" action={<Link to="/dashboard/quizzes/new" className="kd-btn kd-btn-dark">Create your first quiz</Link>}>
@@ -39,6 +41,9 @@ export default function QuizBuilder() {
                   <span className="kd-muted kd-small">{q.updatedAt ? `Edited ${formatDate(q.updatedAt)}` : ''}</span>
                 </div>
                 <h2>{q.title}</h2>
+                <p className="kd-small">
+                  {q.courseLabel ? <strong>{q.courseLabel}</strong> : <span className="kd-muted">No course: visible to every student</span>}
+                </p>
                 <p className="kd-muted kd-small">
                   {q.questions.length} questions · {types.map((t) => QUESTION_TYPE_LABELS[t]).join(', ')}
                 </p>
@@ -51,7 +56,7 @@ export default function QuizBuilder() {
                   <label className="kd-switch">
                     <input type="checkbox" checked={Boolean(q.published)} onChange={(e) => setPublished(q.id, e.target.checked)} />
                     <span aria-hidden="true" />
-                    {q.published ? 'Visible to students' : 'Hidden'}
+                    {q.published ? (q.courseId ? 'Visible to its students' : 'Visible to students') : 'Hidden'}
                   </label>
                   <span className="kd-row-actions">
                     <Link to={`/dashboard/quizzes/${q.id}`} className="kd-icon-btn kd-icon-btn-sm" aria-label={`Edit ${q.title}`}>

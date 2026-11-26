@@ -11,12 +11,18 @@ export default function TeacherStudents() {
   const { interventions } = useClassData();
   const { students } = useClassRoster();
   const [filter, setFilter] = useState('all');
+  const [courseId, setCourseId] = useState('all');
   const [query, setQuery] = useState('');
 
+  // Every course that has at least one student on this roster.
+  const courseOptions = [...new Map(students.flatMap((s) => s.courses ?? []).map((c) => [c.id, c])).values()].sort((a, b) =>
+    `${a.title} ${a.section ?? ''}`.localeCompare(`${b.title} ${b.section ?? ''}`)
+  );
   const q = query.trim().toLowerCase();
   const rows = students
     .map((s) => ({ ...s, risk: riskProfile(s), notes: interventions[s.id] ?? [] }))
     .filter((s) => (filter === 'risk' ? s.risk.level : true))
+    .filter((s) => courseId === 'all' || (s.courses ?? []).some((c) => String(c.id) === courseId))
     .filter((s) => s.name.toLowerCase().includes(q) || (s.email ?? '').toLowerCase().includes(q))
     // Highest risk first; students with no data at all go last.
     .sort((a, b) => Number(b.risk.hasData) - Number(a.risk.hasData) || b.risk.score - a.risk.score || a.name.localeCompare(b.name));
@@ -27,7 +33,10 @@ export default function TeacherStudents() {
         <div>
           <p className="kd-eyebrow">Students</p>
           <h1>Class roster</h1>
-          <p>Sorted by risk. Open a student for a printable progress report and intervention notes.</p>
+          <p>
+            The students enrolled in your courses, sorted by risk. Open a student for a printable progress report and
+            intervention notes. Add students on the <Link to="/dashboard/courses">Courses</Link> page.
+          </p>
         </div>
       </header>
 
@@ -41,6 +50,16 @@ export default function TeacherStudents() {
             onChange={(e) => setQuery(e.target.value)}
             aria-label="Search students"
           />
+          {courseOptions.length > 1 && (
+            <select className="kd-select kd-select-sm" value={courseId} onChange={(e) => setCourseId(e.target.value)} aria-label="Filter by course">
+              <option value="all">All courses</option>
+              {courseOptions.map((c) => (
+                <option key={c.id} value={String(c.id)}>
+                  {[c.subjectCode ?? c.title, c.section].filter(Boolean).join(' · ')}
+                </option>
+              ))}
+            </select>
+          )}
           <div className="kd-segment" role="group" aria-label="Filter students">
             <button type="button" aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>All</button>
             <button type="button" aria-pressed={filter === 'risk'} onClick={() => setFilter('risk')}>At risk</button>
@@ -69,7 +88,13 @@ export default function TeacherStudents() {
                   <tr key={s.id}>
                     <td>
                       <span className="kd-person">
-                        <Avatar name={s.name} size={30} /> <strong>{s.name}</strong>
+                        <Avatar name={s.name} size={30} />
+                        <span>
+                          <strong>{s.name}</strong>
+                          {(s.courses ?? []).length > 0 && (
+                            <small className="kd-muted kd-block">{s.courses.map((c) => [c.subjectCode ?? c.title, c.section].filter(Boolean).join(' · ')).join(', ')}</small>
+                          )}
+                        </span>
                       </span>
                     </td>
                     <td>
@@ -108,7 +133,7 @@ export default function TeacherStudents() {
           </table>
         </div>
         {rows.length === 0 && (
-          <p className="kd-empty">{students.length ? 'No students match.' : 'No students have registered yet.'}</p>
+          <p className="kd-empty">{students.length ? 'No students match.' : 'No students enrolled yet. Add them on the Courses page.'}</p>
         )}
       </article>
     </section>

@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Fireworks } from '../../components/landing/Fireworks';
 import { GAP_TYPES, competencyById, topicById } from '../../data/curriculum';
-import { CHECK_PASS, masteryLevel, studyReview } from '../../lib/engine';
+import { CHECK_PASS, masteryLevel } from '../../lib/engine';
 import { formatDate, useStudentProgress } from '../../hooks/dashboardHooks';
 import { Bar, EmptyState, GapTypeChip, LevelChip, MasteryRing, SeverityChip } from '../../components/dashboard/DashWidgets';
 import { ArrowIcon, ChatIcon, CheckIcon, XIcon } from '../../components/dashboard/DashIcons';
-import { ChangesPanel, RecCard, StudyReview } from '../../components/dashboard/Recommendations';
+import { ChangesPanel, RecCard } from '../../components/dashboard/Recommendations';
 
 const SUMMARY = {
   mastered: 'Strong work. Only a few rough edges to polish.',
@@ -19,12 +19,12 @@ export default function RecommendationHub() {
   const { attemptId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { student, recs, changes } = useStudentProgress();
+  const { student, recs, changes, attempts } = useStudentProgress();
   const fireworksRef = useRef(null);
   const heroRef = useRef(null);
 
-  const sorted = [...student.attempts].sort((a, b) => b.takenAt - a.takenAt);
-  const attempt = attemptId ? student.attempts.find((a) => a.id === attemptId) : sorted[0];
+  const sorted = [...attempts].sort((a, b) => b.takenAt - a.takenAt);
+  const attempt = attemptId ? attempts.find((a) => a.id === attemptId) : sorted[0];
   const celebrate = Boolean(location.state?.fresh) && attempt && (attempt.passed || (attempt.kind === 'quiz' && attempt.pct >= 80));
 
   // Celebrate once, right after finishing; then drop the flag so a refresh does not replay it.
@@ -75,13 +75,9 @@ export default function RecommendationHub() {
           </p>
           <h1 className="kd-hero-title">{headline}</h1>
           <p className="kd-hero-text">{line}</p>
-          {attempt.sample && <p className="kd-sample-note">Sample attempt, loaded for exploring the app.</p>}
           <div className="kd-hero-actions">
             <Link to="/dashboard/path" className="kd-btn kd-btn-accent">
               Open my learning path <ArrowIcon size={18} />
-            </Link>
-            <Link to="/dashboard/for-you" className="kd-btn kd-btn-glass">
-              My recommendations
             </Link>
           </div>
         </div>
@@ -95,12 +91,6 @@ export default function RecommendationHub() {
         </div>
       </article>
 
-      {!isCheck && (
-        <article className="kd-card">
-          <StudyReview review={studyReview({ attempts: [attempt], scope: 'quiz' })} title="Kasalig's feedback on this quiz" max={3} />
-        </article>
-      )}
-
       {changes && changes.attempt.id === attempt.id && (
         <article className="kd-card kd-report-recs">
           <ChangesPanel changes={changes} />
@@ -112,7 +102,6 @@ export default function RecommendationHub() {
                   <RecCard key={r.key} rec={r} rank={i + 1} onDone={student.markRecDone} compact />
                 ))}
               </div>
-              <Link to="/dashboard/for-you" className="kd-text-link">See every recommendation and why</Link>
             </>
           )}
         </article>

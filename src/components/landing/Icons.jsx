@@ -1,14 +1,8 @@
 
-// Brand Logo Icon (Orange circle with stylized leaf/flame or K)
+// Brand logo: the Kasalig bAI "KB" mark (public/logo.png, transparent background).
+// `size` is its height; the width follows the logo's proportions.
 export const LogoIcon = ({ size = 30, className = "" }) => (
-  <svg width={size} height={size} viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <circle cx="18" cy="18" r="18" fill="#E67E22" />
-    <path 
-      d="M18 7C18 7 13 14 13 19.5C13 22.5 15.2 25 18 25C20.8 25 23 22.5 23 19.5C23 14 18 7 18 7Z" 
-      fill="#FDF2E9" 
-    />
-    <circle cx="18" cy="20" r="3.5" fill="#D35400" />
-  </svg>
+  <img src="/logo.png" alt="" height={size} className={className} style={{ height: size, width: 'auto', display: 'block' }} />
 );
 
 export const GamepadIcon = ({ size = 18, color = "currentColor" }) => (

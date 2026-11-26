@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import useAuth from '../../context/useAuth';
-import { GAP_TYPES, SEVERITIES, TOPICS, competenciesOf } from '../../data/curriculum';
+import { GAP_TYPES, SEVERITIES, competenciesOf } from '../../data/curriculum';
 import { learningPath, masteryLevel } from '../../lib/engine';
-import { CLASS_NAME, PASSING_GRADE, RISK_LABELS, pctText, riskProfile } from '../../data/classData';
+import { topicsFor, PASSING_GRADE, RISK_LABELS, pctText, riskProfile } from '../../data/classData';
 import { formatDate } from '../../hooks/dashboardHooks';
 import { useClassData, useClassRoster } from '../../store/learningStore';
 import { Avatar, Bar, EmptyState, LevelChip } from '../../components/dashboard/DashWidgets';
@@ -109,10 +109,11 @@ export default function StudentReport() {
   // The same learning path the student sees, from their own results (gap types come from their answers).
   const plan = learningPath(student.status, {}, resources);
   const score = (t) => student.scores[t.id];
-  const strengths = TOPICS.filter((t) => score(t) >= 80);
-  const needs = TOPICS.filter((t) => score(t) !== undefined && score(t) < 65).sort((a, b) => score(a) - score(b));
+  // This student's topics: their courses' subjects plus anything they were tested on.
+  const myTopics = topicsFor([student]);
+  const strengths = myTopics.filter((t) => score(t) >= 80);
+  const needs = myTopics.filter((t) => score(t) !== undefined && score(t) < 65).sort((a, b) => score(a) - score(b));
   const recent = [...student.attempts].sort((a, b) => b.takenAt - a.takenAt).slice(0, 6);
-  const trend = risk.quiz !== null && student.prevQuizAvg !== null ? risk.quiz - student.prevQuizAvg : null;
 
   const submit = (e) => {
     e.preventDefault();
@@ -144,7 +145,7 @@ export default function StudentReport() {
               <p className="kd-eyebrow">Learner progress report</p>
               <h1>{student.name}</h1>
               <p className="kd-muted">
-                {[student.program, CLASS_NAME].filter(Boolean).join(' · ')} · prepared by {user.fullName} ·{' '}
+                {[student.program, ...(student.courses ?? []).map((c) => [c.subjectCode ?? c.title, c.section].filter(Boolean).join(' '))].filter(Boolean).join(' · ')} · prepared by {user.fullName} ·{' '}
                 {formatDate(preparedOn, { day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
             </div>
@@ -174,11 +175,6 @@ export default function StudentReport() {
             <strong>{pctText(student.attendance)}</strong>
             {student.attendance === null && <span className="kd-muted kd-small">Not entered</span>}
           </div>
-          <div>
-            <small>Since last period</small>
-            <strong>{trend === null ? '—' : `${trend >= 0 ? '+' : ''}${trend}`}</strong>
-            <span className="kd-muted kd-small">{trend === null ? 'needs results from 2+ weeks ago' : 'quiz points'}</span>
-          </div>
         </div>
 
         <section className="kd-report-section">
@@ -193,7 +189,7 @@ export default function StudentReport() {
               </tr>
             </thead>
             <tbody>
-              {TOPICS.map((t) => (
+              {myTopics.map((t) => (
                 <tr key={t.id}>
                   <td>
                     <strong>{t.name}</strong>

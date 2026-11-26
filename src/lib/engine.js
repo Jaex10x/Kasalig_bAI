@@ -14,7 +14,7 @@ import {
   topicById,
   topicsOf,
 } from '../data/curriculum';
-import { generateQuestion } from './generators';
+import { canGenerate, generateQuestion } from './generators';
 
 export const MASTERY = 80; // a topic at or above this has no gap
 export const PREREQ_WEAK = 60; // a prerequisite below this is "missing"
@@ -210,6 +210,9 @@ export function gradeAttempt({ quiz, questions, responses, kind = 'quiz', topicI
   return {
     id: `att-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
     kind,
+    // The class this result belongs to: a teacher quiz's course, or a diagnostic's subject code.
+    courseId: quiz?.courseId ?? null,
+    courseCode: quiz?.courseCode ?? null,
     quizId: quiz?.id ?? null,
     title: quiz?.title ?? (topicId ? `Mastery check: ${topicById(topicId).name}` : 'Quiz'),
     topicId,
@@ -337,16 +340,22 @@ export function learningPath(status, practice, resources = []) {
       practice: p,
       waitingOn,
       lastCheck: s.lastCheck && s.lastCheck.takenAt > s.gap.openedAt ? s.lastCheck : null,
-      resources: [...teacherRes, ...BUILT_IN_MATERIALS[topic.id].map((m) => ({ ...m, builtIn: true }))],
+      resources: [...teacherRes, ...(BUILT_IN_MATERIALS[topic.id] ?? []).map((m) => ({ ...m, builtIn: true }))],
       steps,
       next: steps.find((st) => !st.done),
     };
   });
 }
 
-/** Four questions for a mastery check: the bank's questions on the topic, topped up with fresh ones. */
+/**
+ * Four questions for a mastery check: the bank's questions on the topic, topped up with fresh
+ * generated ones. A topic without a generator uses four different bank questions, harder first.
+ */
 export function buildMasteryCheck(topicId) {
   const bank = QUESTION_BANK.filter((q) => q.topicId === topicId).sort(() => Math.random() - 0.5);
+  if (!canGenerate(topicId)) {
+    return [...bank].sort((a, b) => b.difficulty - a.difficulty).slice(0, CHECK_SIZE).sort(() => Math.random() - 0.5);
+  }
   const qs = bank.slice(0, CHECK_SIZE - 1);
   const levels = [2, 3, 3];
   while (qs.length < CHECK_SIZE) qs.push(generateQuestion(topicId, levels[qs.length % levels.length]));
@@ -434,7 +443,7 @@ export function sampleHistory(questions) {
       else value = right ? q.accept[0] : q.traps?.[0]?.match ?? '0';
       responses[q.id] = { value, ms: 9000 };
     });
-    const att = gradeAttempt({ quiz: { id: 'diagnostic', title: 'Algebra Diagnostic' }, questions, responses, prior });
+    const att = gradeAttempt({ quiz: { id: 'diagnostic', title: 'Math Foundations Diagnostic' }, questions, responses, prior });
     att.takenAt = Date.now() - daysAgo * DAY;
     att.id = `${att.id}-s${daysAgo}`;
     att.sample = true;
@@ -478,26 +487,46 @@ export const resourceKey = (topicId, r, gapKey) => `res:${topicId}:${r.id ?? r.t
 /**
  * Ranked recommendations for a student.
  *  attempts, path: from the student's history
- *  quizzes: published teacher quizzes
+ *  quizzes: published teacher quizzes for the student's courses
  *  done: { [recommendationKey]: timestamp } items the student marked done
+ *  diagnostics: the built-in diagnostics on offer (their courses' subjects first)
+ *  enrolled: how many classes the student is enrolled in
  */
-export function recommendations({ attempts, path, quizzes = [], done = {} }) {
+export function recommendations({ attempts, path, quizzes = [], done = {}, diagnostics = [], enrolled = 0 }) {
   const recs = [];
   const add = (r) => {
     if (!done[r.key]) recs.push(r);
   };
+  const taken = new Set(attempts.map((a) => a.quizId));
 
-  if (!attempts.length) {
+  if (!enrolled) {
     add({
-      key: 'quiz:diagnostic',
-      kind: 'quiz',
-      title: 'Take the Algebra Diagnostic',
-      reason: 'One result is all Kasalig needs to find your gaps and build your learning path.',
-      to: '/dashboard/quiz/diagnostic',
-      priority: 100,
+      key: 'enroll',
+      kind: 'enroll',
+      title: 'Enroll in your classes',
+      reason: 'Join the classes you take this term, so you get their diagnostics and quizzes and your teachers see your progress.',
+      to: '/dashboard/my-courses',
+      priority: 110,
     });
-    return recs;
   }
+
+  // A diagnostic for every enrolled subject not taken yet (a new course adds a new one).
+  diagnostics
+    .filter((d) => !taken.has(d.id) && (d.courseCode || !attempts.length))
+    .forEach((d, i) =>
+      add({
+        key: `quiz:${d.id}`,
+        kind: 'quiz',
+        title: `Take the ${d.title}`,
+        reason: attempts.length
+          ? `New for ${d.courseCode}: one result maps your gaps in this subject.`
+          : 'One result is all Kasalig needs to find your gaps and build your learning path.',
+        to: `/dashboard/quiz/${d.id}`,
+        priority: (attempts.length ? 88 : 100) - i,
+      })
+    );
+  // (No early return without results: a class with no built-in diagnostic still recommends
+  // its teacher's quizzes below.)
 
   path.forEach((item, i) => {
     const { topic, gap, practice, waitingOn } = item;
@@ -578,7 +607,6 @@ export function recommendations({ attempts, path, quizzes = [], done = {} }) {
   });
 
   // Quizzes: new ones from the teacher, or a re-check of the diagnostic once everything is closed.
-  const taken = new Set(attempts.map((a) => a.quizId));
   quizzes
     .filter((q) => !taken.has(q.id))
     .forEach((q) =>
@@ -593,15 +621,20 @@ export function recommendations({ attempts, path, quizzes = [], done = {} }) {
       })
     );
   if (!path.length) {
-    const lastDiag = attempts.filter((a) => a.quizId === 'diagnostic').sort((a, b) => b.takenAt - a.takenAt)[0];
-    add({
-      key: `quiz:diagnostic:recheck:${lastDiag?.id ?? 'none'}`,
-      kind: 'quiz',
-      title: 'Retake the Algebra Diagnostic',
-      reason: 'Every gap is closed. A fresh diagnostic checks that it sticks and finds anything new.',
-      to: '/dashboard/quiz/diagnostic',
-      priority: 70,
-    });
+    // Re-check with the diagnostic taken most recently (built-in ones only).
+    const diagIds = new Set(diagnostics.map((d) => d.id));
+    const lastDiag = attempts.filter((a) => diagIds.has(a.quizId)).sort((a, b) => b.takenAt - a.takenAt)[0];
+    const diag = diagnostics.find((d) => d.id === lastDiag?.quizId);
+    if (diag) {
+      add({
+        key: `quiz:${diag.id}:recheck:${lastDiag.id}`,
+        kind: 'quiz',
+        title: `Retake the ${diag.title}`,
+        reason: 'Every gap is closed. A fresh diagnostic checks that it sticks and finds anything new.',
+        to: `/dashboard/quiz/${diag.id}`,
+        priority: 70,
+      });
+    }
   }
 
   return recs.sort((a, b) => b.priority - a.priority);
@@ -660,207 +693,4 @@ export function statusFromScores(scores) {
     status[t.id] = { pct: score, gap, closed: false, history: [] };
   });
   return status;
-}
-
-/* --- Study review (critique + advice) ----------------------------------------
- * Looks at HOW the student answers and studies, not just what they got wrong:
- * speed, kinds of mistakes, question types, difficulty, and study habits.
- * Each critique states the evidence it is based on and a concrete fix.
- * Rule-based on the student's own data; a language model could later rewrite
- * the wording, but the evidence should stay the source of every point.
- * ------------------------------------------------------------------------- */
-
-const pctOf = (c, t) => (t ? Math.round((c / t) * 100) : null);
-/** "A", "A and B", "A, B and C". */
-const listText = (names) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`);
-const DAY_MS = 86400000;
-
-/**
- * attempts: the student's attempts (pass a single attempt to review just that quiz)
- * practice, activity: from the student's saved data (optional for a single-quiz review)
- * Returns { verdict, strengths: [{ title, evidence }], critiques: [{ id, title, evidence, advice, weight }], stats }
- */
-export function studyReview({ attempts, practice = {}, activity = [], scope = 'all' }) {
-  const items = attempts.flatMap((a) => a.items ?? []);
-  const misses = items.filter((i) => !i.correct);
-  const status = topicStatus(attempts);
-  const critiques = [];
-  const strengths = [];
-
-  if (!items.length) {
-    return { verdict: 'Take a quiz and Kasalig will review how you answer, not just what you got wrong.', strengths, critiques, stats: null };
-  }
-
-  const byType = (type) => {
-    const list = items.filter((i) => i.type === type);
-    return { n: list.length, pct: pctOf(list.filter((i) => i.correct).length, list.length) };
-  };
-  const byDiff = (lo, hi) => {
-    const list = items.filter((i) => i.difficulty >= lo && i.difficulty <= hi);
-    return { n: list.length, pct: pctOf(list.filter((i) => i.correct).length, list.length) };
-  };
-  const stats = {
-    accuracy: pctOf(items.length - misses.length, items.length),
-    mc: byType('mc'),
-    id: byType('id'),
-    tf: byType('tf'),
-    easy: byDiff(1, 1),
-    harder: byDiff(2, 3),
-    rushed: misses.filter((m) => m.ms > 0 && m.ms < RUSHED_MS).length,
-    errors: { concept: 0, careless: 0, prerequisite: 0 },
-  };
-  misses.forEach((m) => { stats.errors[m.error] = (stats.errors[m.error] ?? 0) + 1; });
-
-  // 1. Rushing
-  if (stats.rushed >= 2) {
-    critiques.push({
-      id: 'rushing',
-      title: 'You are answering too fast',
-      evidence: `${stats.rushed} of your ${misses.length} wrong answers took under ${RUSHED_MS / 1000} seconds, faster than the working takes.`,
-      advice: 'Before you choose, write the first step on paper. If you can’t, reread the question once more.',
-      weight: 30 + stats.rushed * 4,
-    });
-  }
-
-  // 2. Careless slips
-  if (misses.length >= 3 && stats.errors.careless / misses.length >= 0.3) {
-    critiques.push({
-      id: 'careless',
-      title: 'Small slips are costing you points',
-      evidence: `${stats.errors.careless} of ${misses.length} mistakes were slips (signs, a skipped last step), not gaps in understanding.`,
-      advice: 'Check every answer by putting it back into the question. Circle negative signs before you start.',
-      weight: 22 + stats.errors.careless * 3,
-    });
-  }
-
-  // 3. Weak foundations
-  const prereqGaps = TOPICS.filter((t) => isOpenGap(status[t.id]) && status[t.id].gap.type === 'prerequisite');
-  if (prereqGaps.length) {
-    const under = [...new Set(prereqGaps.flatMap((t) => status[t.id].gap.prereqs))].map((id) => topicById(id)?.name).filter(Boolean);
-    critiques.push({
-      id: 'foundation',
-      title: 'You are building on shaky foundations',
-      evidence: `${listText(prereqGaps.map((t) => t.name))} ${prereqGaps.length === 1 ? 'is' : 'are'} weak mainly because ${listText(under) || 'an earlier skill'} ${under.length === 1 ? 'is' : 'are'} not solid yet.`,
-      advice: `Pause the harder topics and fix ${under[0] ?? 'the prerequisite'} first. Your learning path is already ordered that way.`,
-      weight: 26 + prereqGaps.length * 5,
-    });
-  }
-
-  // 4. Recognising vs producing answers
-  if (stats.mc.n >= 3 && stats.id.n >= 3 && stats.mc.pct - stats.id.pct >= 25) {
-    critiques.push({
-      id: 'recall',
-      title: 'You recognise answers but struggle to produce them',
-      evidence: `Multiple choice: ${stats.mc.pct}% correct. Identification (typing the answer yourself): ${stats.id.pct}%.`,
-      advice: 'When practising, cover the choices and work the answer out first, then check it against the options.',
-      weight: 20 + (stats.mc.pct - stats.id.pct) / 4,
-    });
-  }
-
-  // 5. Harder questions
-  if (stats.easy.n >= 2 && stats.harder.n >= 3 && stats.easy.pct - stats.harder.pct >= 30) {
-    critiques.push({
-      id: 'difficulty',
-      title: 'You are stuck at the easy level',
-      evidence: `Easy questions: ${stats.easy.pct}% correct. Medium and hard: ${stats.harder.pct}%.`,
-      advice: 'Stay in adaptive practice until it moves you up to Medium. It only levels up after two right in a row.',
-      weight: 18 + (stats.easy.pct - stats.harder.pct) / 5,
-    });
-  }
-
-  // 6. Concept gaps that keep coming back across quizzes
-  const repeated = TOPICS.filter((t) => {
-    const quizMisses = attempts
-      .filter((a) => a.kind === 'quiz')
-      .filter((a) => a.gaps?.some((g) => g.topicId === t.id && g.type === 'concept'));
-    return quizMisses.length >= 2;
-  });
-  if (repeated.length) {
-    critiques.push({
-      id: 'repeat',
-      title: 'The same misunderstanding keeps coming back',
-      evidence: `${listText(repeated.map((t) => t.name))}: a missed concept showed up in two or more quizzes.`,
-      advice: 'Retaking quizzes won’t fix this. Read the short lesson, then ask Kasalig to walk you through one problem step by step.',
-      weight: 28,
-    });
-  }
-
-  if (scope === 'all') {
-    const open = TOPICS.filter((t) => isOpenGap(status[t.id]));
-    const practiced = Object.values(practice).reduce((s, p) => s + (p.answered ?? 0), 0);
-
-    // 7. Practising without the lesson
-    const skipped = open.filter((t) => {
-      const p = practiceFor(practice, t.id, status[t.id].gap.attemptId);
-      return p.answered >= 3 && !p.lessonRead && status[t.id].gap.type === 'concept';
-    });
-    if (skipped.length) {
-      critiques.push({
-        id: 'skip-lesson',
-        title: 'You jump into practice without the lesson',
-        evidence: `You practised ${listText(skipped.map((t) => t.name))} without reading its lesson, but the gap there is a missed concept.`,
-        advice: 'Practice repeats what you already do. For a concept gap, the 2-minute lesson comes first.',
-        weight: 21,
-      });
-    }
-
-    // 8. Not practising at all
-    if (open.length && practiced < 4) {
-      critiques.push({
-        id: 'no-practice',
-        title: 'Your gaps are open but you are not practising',
-        evidence: `${open.length} open gap${open.length === 1 ? '' : 's'}, and ${practiced} practice question${practiced === 1 ? '' : 's'} answered so far.`,
-        advice: 'Ten minutes of adaptive practice on your first gap moves you further than another full quiz.',
-        weight: 24,
-      });
-    }
-
-    // 9. Failed mastery checks
-    const failed = attempts.filter((a) => a.kind === 'check' && !a.passed);
-    if (failed.length) {
-      critiques.push({
-        id: 'checks',
-        title: 'Mastery checks are not sticking yet',
-        evidence: `${failed.length} mastery check${failed.length === 1 ? '' : 's'} not passed.`,
-        advice: 'After the practice goal, do three more Hard questions before trying the check again.',
-        weight: 15 + failed.length * 3,
-      });
-    }
-
-    // 10. Consistency
-    const times = [...attempts.map((a) => a.takenAt), ...activity];
-    const last = Math.max(...times);
-    const idleDays = Math.floor((Date.now() - last) / DAY_MS);
-    if (idleDays >= 3 && open.length) {
-      critiques.push({
-        id: 'idle',
-        title: `It has been ${idleDays} days since you last studied`,
-        evidence: `${open.length} gap${open.length === 1 ? ' is' : 's are'} still open, and skills fade without use.`,
-        advice: 'Short daily sessions beat long ones: 15 minutes a day keeps your streak and your memory going.',
-        weight: 19 + Math.min(idleDays, 10),
-      });
-    }
-  }
-
-  // Strengths: specific, earned praise
-  const mastered = TOPICS.filter((t) => status[t.id] && status[t.id].pct >= MASTERY);
-  if (mastered.length) strengths.push({ title: 'Solid topics', evidence: `${listText(mastered.map((t) => t.name))} at ${MASTERY}% or higher.` });
-  const closed = TOPICS.filter((t) => status[t.id]?.closed);
-  if (closed.length) strengths.push({ title: 'Gaps you closed', evidence: `${listText(closed.map((t) => t.name))}: passed the mastery check.` });
-  const gains = TOPICS.map((t) => {
-    const h = status[t.id]?.history ?? [];
-    return h.length >= 2 ? { t, gain: h.at(-1).pct - h[0].pct } : null;
-  }).filter((g) => g && g.gain >= 20);
-  if (gains.length) strengths.push({ title: 'Real improvement', evidence: gains.map((g) => `${g.t.name} +${g.gain} points`).join(', ') + '.' });
-  if (stats.harder.n >= 3 && stats.harder.pct >= 70) strengths.push({ title: 'You handle hard questions', evidence: `${stats.harder.pct}% correct on Medium and Hard.` });
-  if (misses.length && stats.rushed === 0 && stats.errors.careless === 0) strengths.push({ title: 'Careful worker', evidence: 'No rushed answers and no careless slips.' });
-
-  critiques.sort((a, b) => b.weight - a.weight);
-  const main = critiques[0];
-  let verdict;
-  if (!main) verdict = stats.accuracy >= MASTERY ? 'Strong, careful work. Keep the habit and take on harder quizzes.' : 'No bad habits stand out. Keep working through your learning path in order.';
-  else if (stats.accuracy >= 70) verdict = `Good results overall (${stats.accuracy}%), but ${main.title.charAt(0).toLowerCase() + main.title.slice(1)}. Fix that first.`;
-  else verdict = `${main.title}. That is the biggest thing holding your score (${stats.accuracy}%) back right now.`;
-
-  return { verdict, strengths, critiques, stats };
 }

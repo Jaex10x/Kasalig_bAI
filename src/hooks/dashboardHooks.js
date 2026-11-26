@@ -7,11 +7,12 @@ import {
   pathChanges,
   recommendations,
   streaks,
-  studyReview,
   subjectMastery,
   topicStatus,
 } from '../lib/engine';
 import { useClassData, useStudentData } from '../store/learningStore';
+import { TOPICS, diagnosticsForCourseCodes, topicsForCourseCodes } from '../data/curriculum';
+import { attemptInCourses } from '../lib/courseScope';
 
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -52,7 +53,22 @@ export function greeting(date = new Date()) {
 export function useStudentProgress() {
   const student = useStudentData();
   const classData = useClassData();
-  const { attempts, practice, practiceTotal, activity, recDone } = student;
+  const { practice, practiceTotal, activity, recDone } = student;
+
+  // Everything is scoped to the classes the student is enrolled in: with no class, every page
+  // starts empty, and a course's quizzes, results and gaps appear once they enroll in it.
+  const myCourses = useMemo(() => classData.myCourses ?? [], [classData.myCourses]);
+  const courseIds = useMemo(() => new Set(myCourses.map((c) => c.id)), [myCourses]);
+  const courseCodes = useMemo(() => myCourses.map((c) => c.subjectCode).filter(Boolean), [myCourses]);
+  const diagnostics = useMemo(() => diagnosticsForCourseCodes(courseCodes), [courseCodes]);
+  const quizzes = useMemo(
+    () => classData.quizzes.filter((q) => q.published && q.courseId && courseIds.has(q.courseId)),
+    [classData.quizzes, courseIds]
+  );
+  const attempts = useMemo(
+    () => student.attempts.filter((a) => attemptInCourses(a, courseIds, courseCodes)),
+    [student.attempts, courseIds, courseCodes]
+  );
 
   const derived = useMemo(() => {
     const status = topicStatus(attempts);
@@ -68,18 +84,20 @@ export function useStudentProgress() {
     };
   }, [attempts, practice, practiceTotal, activity, classData.resources]);
 
-  const quizzes = useMemo(() => classData.quizzes.filter((q) => q.published), [classData.quizzes]);
+  // Topics worth showing: their courses' subjects, plus anything they have been tested on.
+  const topics = useMemo(() => {
+    const mine = new Set(topicsForCourseCodes(courseCodes).map((t) => t.id));
+    return TOPICS.filter((t) => mine.has(t.id) || derived.status[t.id]);
+  }, [courseCodes, derived.status]);
 
   // Recommendations: ranked next steps with a reason each, rebuilt after every result.
   const recs = useMemo(
-    () => recommendations({ attempts, path: derived.path, quizzes, done: recDone ?? {} }),
-    [attempts, derived.path, quizzes, recDone]
+    () => recommendations({ attempts, path: derived.path, quizzes, done: recDone ?? {}, diagnostics, enrolled: myCourses.length }),
+    [attempts, derived.path, quizzes, recDone, diagnostics, myCourses.length]
   );
   const changes = useMemo(() => pathChanges(attempts), [attempts]);
-  // Critique of how the student answers and studies, with evidence and advice.
-  const review = useMemo(() => studyReview({ attempts, practice, activity }), [attempts, practice, activity]);
 
-  return { student, classData, quizzes, recs, changes, review, ...derived };
+  return { student, classData, quizzes, recs, changes, myCourses, diagnostics, topics, attempts, ...derived };
 }
 
 export const formatDate = (ms, opts = { day: 'numeric', month: 'short' }) => new Date(ms).toLocaleDateString(undefined, opts);

@@ -1,35 +1,65 @@
 import { Link } from 'react-router-dom';
 import useAuth from '../../context/useAuth';
 import Capybara from '../../components/capybara/Capybara';
-import { DIAGNOSTIC, DIFFICULTY_LABELS, GAP_TYPES, TOPICS, subjectById } from '../../data/curriculum';
+import { DIFFICULTY_LABELS, GAP_TYPES, subjectById } from '../../data/curriculum';
 import { greeting, useStudentProgress } from '../../hooks/dashboardHooks';
 import { Avatar, Bar, GapTypeChip, MasteryRing, SampleNotice, SeverityChip } from '../../components/dashboard/DashWidgets';
 import { ArrowIcon, ClockIcon, LevelIcon, StarIcon } from '../../components/dashboard/DashIcons';
-import { ChangesPanel, RecCard, StudyReview } from '../../components/dashboard/Recommendations';
+import { ChangesPanel, RecCard } from '../../components/dashboard/Recommendations';
 
 const STEP_TITLES = { lesson: 'Short lesson', practice: 'Adaptive practice', check: 'Mastery check' };
 
 export default function StudentDashboard() {
   const { user } = useAuth();
-  const { student, status, gaps, path, overall, streak, badges, latest, quizzes, recs, changes, review } = useStudentProgress();
+  const { student, status, gaps, path, overall, streak, badges, latest, quizzes, recs, changes, diagnostics, topics, myCourses, attempts } = useStudentProgress();
+  // The diagnostic to start with: their first course's subject, else Math Foundations.
+  const startDiag = diagnostics[0];
   const showChanges = changes && changes.attempt.id !== student.seenChangesOf;
   const firstName = user.fullName.split(/\s+/)[0];
-  const hasHistory = student.attempts.length > 0;
+  const hasHistory = attempts.length > 0;
   const earned = badges.filter((b) => b.earned);
   const first = path[0];
 
   // The hero always points at the single most useful next thing to do.
   let hero;
-  if (!hasHistory) {
+  if (!hasHistory && !myCourses.length) {
     hero = {
       eyebrow: 'Start here',
-      title: `Take the ${DIAGNOSTIC.title}`,
+      title: 'Enroll in your classes',
+      meta: [[ClockIcon, 'Takes a minute']],
+      to: '/dashboard/my-courses',
+      cta: 'Find my classes',
+    };
+  } else if (!hasHistory && startDiag) {
+    // A class whose subject has a built-in diagnostic.
+    hero = {
+      eyebrow: 'Start here',
+      title: `Take the ${startDiag.title}`,
       meta: [
-        [ClockIcon, `About ${DIAGNOSTIC.minutes} min`],
-        [LevelIcon, `${DIAGNOSTIC.questionIds.length} questions, 3 types`],
+        [ClockIcon, `About ${startDiag.minutes} min`],
+        [LevelIcon, `${startDiag.questionIds.length} questions, 3 types`],
       ],
-      to: `/dashboard/quiz/${DIAGNOSTIC.id}`,
+      to: `/dashboard/quiz/${startDiag.id}`,
       cta: 'Start the diagnostic',
+    };
+  } else if (!hasHistory && quizzes.length) {
+    // No built-in diagnostic for these subjects: start with a teacher's quiz.
+    const quiz = quizzes[0];
+    hero = {
+      eyebrow: `Start here · ${quiz.courseCode ?? 'Your class'}`,
+      title: `Take ${quiz.title}`,
+      meta: [[LevelIcon, `${quiz.questions.length} question${quiz.questions.length === 1 ? '' : 's'}`]],
+      to: `/dashboard/quiz/${quiz.id}`,
+      cta: 'Start the quiz',
+    };
+  } else if (!hasHistory) {
+    // Enrolled, but nothing to take yet.
+    hero = {
+      eyebrow: 'Waiting for your teacher',
+      title: 'No quizzes in your classes yet',
+      meta: [[ClockIcon, `${myCourses.length} class${myCourses.length === 1 ? '' : 'es'} enrolled`]],
+      to: '/dashboard/my-courses',
+      cta: 'See my classes',
     };
   } else if (first) {
     const step = first.next ?? first.steps[0];
@@ -83,11 +113,9 @@ export default function StudentDashboard() {
 
         {!hasHistory && (
           <SampleNotice>
-            No results yet. Take the diagnostic, or{' '}
-            <button type="button" className="kd-link-btn" onClick={student.loadSampleHistory}>
-              load sample history
-            </button>{' '}
-            to explore the app.
+            {myCourses.length
+              ? 'No results yet. Take a quiz in one of your classes to find your gaps.'
+              : 'No classes yet. Enroll in your classes and their quizzes, gaps and progress show up here.'}
           </SampleNotice>
         )}
 
@@ -166,11 +194,7 @@ export default function StudentDashboard() {
               <h2>Recommended for you</h2>
               <p>Ranked from your latest results. Each one says why it was picked.</p>
             </div>
-            <Link to="/dashboard/for-you" className="kd-btn kd-btn-ghost kd-btn-sm">
-              See all {recs.length} <ArrowIcon size={15} />
-            </Link>
           </header>
-          <StudyReview review={review} compact title="Kasalig's honest take" />
           {showChanges && <ChangesPanel compact changes={changes} onSeen={() => student.markChangesSeen(changes.attempt.id)} />}
           <div className="kd-rec-list is-grid">
             {recs.slice(0, 3).map((r, i) => (
@@ -182,7 +206,9 @@ export default function StudentDashboard() {
         <Link to="/dashboard/quiz" className="kd-cta">
           <span className="kd-cta-title">{hasHistory ? 'Take a quiz' : 'Find your gaps'}</span>
           <span className="kd-cta-sub">
-            {quizzes.length ? `${quizzes.length + 1} quizzes available` : 'Multiple choice, identification, true or false'}
+            {quizzes.length + diagnostics.length
+              ? `${quizzes.length + diagnostics.length} quiz${quizzes.length + diagnostics.length === 1 ? '' : 'zes'} available`
+              : 'Multiple choice, identification, true or false'}
           </span>
           <span className="kd-cta-go" aria-hidden="true">
             <ArrowIcon size={20} />
@@ -196,7 +222,7 @@ export default function StudentDashboard() {
         </Link>
 
         <ul className="kd-topic-list" aria-label="Mastery by topic">
-          {TOPICS.map((t, i) => {
+          {topics.map((t, i) => {
             const s = status[t.id];
             const open = s?.gap && !s.closed;
             return (

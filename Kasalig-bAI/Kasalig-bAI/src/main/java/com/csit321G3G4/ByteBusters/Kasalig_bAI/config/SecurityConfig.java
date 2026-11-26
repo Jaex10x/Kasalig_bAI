@@ -37,10 +37,12 @@ public class SecurityConfig {
                 .requestMatchers("/", "/error").permitAll()
                 .requestMatchers(HttpMethod.POST,
                         "/api/student/register", "/api/student/postStudent", "/api/student/login",
-                        "/api/teacher/register", "/api/teacher/postTeacher", "/api/teacher/login",
+                        "/api/teacher/login",
                         "/api/admin/login").permitAll()
 
-                // Managing teachers and students (admin accounts come from AdminBootstrap)
+                // Managing teachers and students (admin accounts come from AdminBootstrap).
+                // Teachers cannot sign themselves up: only an admin creates teacher accounts.
+                .requestMatchers(HttpMethod.POST, "/api/teacher/register", "/api/teacher/postTeacher").hasRole("ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                 // Listing and looking up other people's accounts
@@ -57,6 +59,10 @@ public class SecurityConfig {
                 // content and the sections is open to any signed-in user; the controller limits a
                 // student to their own results and hides staff-only class records from students.
                 .requestMatchers(HttpMethod.GET, "/api/learning/roster").hasAnyRole("TEACHER", "ADMIN")
+                // Courses and enrollment (CourseController); a teacher only manages their own courses.
+                .requestMatchers("/api/courses", "/api/courses/**").hasAnyRole("TEACHER", "ADMIN")
+                // Student self-enrollment (StudentCourseController); always for the signed-in student.
+                .requestMatchers("/api/enroll/**").hasRole("STUDENT")
                 .requestMatchers(HttpMethod.PUT, "/api/learning/class/**").hasAnyRole("TEACHER", "ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/learning/class/**").hasAnyRole("TEACHER", "ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/learning/school/**").hasRole("ADMIN")

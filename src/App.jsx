@@ -8,15 +8,18 @@ import PreviewPage from './pages/public/PreviewPage';
 import DashboardPage from './pages/shared/DashboardPage';
 // Student
 import QuizPicker from './pages/student/QuizPicker';
+import StudentCourses from './pages/student/StudentCourses';
 import QuizScreen from './pages/student/QuizScreen';
 import RecommendationHub from './pages/student/RecommendationHub';
 import LearningPath from './pages/student/LearningPath';
 import PracticeScreen from './pages/student/PracticeScreen';
 import ProgressHistory from './pages/student/ProgressHistory';
 import TutorChat from './pages/student/TutorChat';
-import RecommendationsPage from './pages/student/RecommendationsPage';
 // Teacher
 import TeacherStudents from './pages/teacher/TeacherStudents';
+import MyCourses from './pages/teacher/MyCourses';
+import GapAnalytics from './pages/teacher/GapAnalytics';
+import ClassProgress from './pages/teacher/ClassProgress';
 import StudentReport from './pages/teacher/StudentReport';
 import QuizBuilder from './pages/teacher/QuizBuilder';
 import QuizEditor from './pages/teacher/QuizEditor';
@@ -25,6 +28,7 @@ import CurriculumMap from './pages/shared/CurriculumMap';
 // Admin
 import ManageClasses from './pages/admin/ManageClasses';
 import ManageSubjects from './pages/admin/ManageSubjects';
+import ManageTeachers from './pages/admin/ManageTeachers';
 import ProtectedRoute from './routes/ProtectedRoute';
 import DashboardLayout, { RoleOnly } from './components/dashboard/DashboardLayout';
 import useAppNavigate from './hooks/useAppNavigate';
@@ -59,11 +63,11 @@ function App() {
           <Route index element={<DashboardPage />} />
 
           {/* Student: assess → gap report → learning path → practice → mastery check */}
+          <Route path="my-courses" element={student(<StudentCourses />)} />
           <Route path="quiz" element={student(<QuizPicker />)} />
           <Route path="quiz/:quizId" element={student(<QuizScreen mode="quiz" />)} />
           <Route path="results" element={student(<RecommendationHub />)} />
           <Route path="results/:attemptId" element={student(<RecommendationHub />)} />
-          <Route path="for-you" element={student(<RecommendationsPage />)} />
           <Route path="path" element={student(<LearningPath />)} />
           <Route path="practice/:topicId" element={student(<PracticeScreen />)} />
           <Route path="check/:topicId" element={student(<QuizScreen mode="check" />)} />
@@ -71,11 +75,14 @@ function App() {
           <Route path="tutor" element={student(<TutorChat />)} />
 
           {/* Teacher */}
+          <Route path="courses" element={teacher(<MyCourses />)} />
           <Route path="students" element={teacher(<TeacherStudents />)} />
           <Route path="students/:studentId" element={teacher(<StudentReport />)} />
           <Route path="quizzes" element={teacher(<QuizBuilder />)} />
           <Route path="quizzes/:quizId" element={teacher(<QuizEditor />)} />
           <Route path="resources" element={teacher(<ResourceLibrary />)} />
+          <Route path="gaps" element={teacher(<GapAnalytics />)} />
+          <Route path="class-progress" element={teacher(<ClassProgress />)} />
 
           {/* Teacher and admin */}
           <Route path="curriculum" element={<RoleOnly roles={['teacher', 'admin']}><CurriculumMap /></RoleOnly>} />
@@ -83,6 +90,7 @@ function App() {
           {/* Admin */}
           <Route path="classes" element={admin(<ManageClasses />)} />
           <Route path="subjects" element={admin(<ManageSubjects />)} />
+          <Route path="teachers" element={admin(<ManageTeachers />)} />
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>

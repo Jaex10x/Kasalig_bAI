@@ -188,13 +188,40 @@ public class LearningDataService {
      */
     @Transactional(readOnly = true)
     public ObjectNode getClassData(boolean staff) {
+        return getClassData(staff, null, null, null);
+    }
+
+    /**
+     * As above, scoped to who is asking:
+     *  - visibleStudents (when not null) limits intervention notes and standings to those
+     *    students, so a teacher only sees records about the students enrolled in their courses;
+     *  - quizAuthorId (a teacher's id, when not null) limits quizzes to the ones that teacher wrote;
+     *  - studentCourseIds (a student's enrolled course ids, when not null) limits published quizzes
+     *    to those courses.
+     * A quiz saved without a courseId (from before quizzes belonged to courses) stays visible.
+     */
+    @Transactional(readOnly = true)
+    public ObjectNode getClassData(boolean staff, Set<Integer> visibleStudents, Integer quizAuthorId,
+            Set<Integer> studentCourseIds) {
         ObjectNode out = json.createObjectNode();
 
         ArrayNode quizzes = out.putArray("quizzes");
         (staff
                 ? records.findByKindOrderByCreatedAtAscRecordIdAsc(ClassRecordKind.QUIZ)
                 : records.findByKindAndPublishedTrueOrderByCreatedAtAscRecordIdAsc(ClassRecordKind.QUIZ))
-                .forEach(r -> quizzes.add(read(r.getPayload())));
+                .forEach(r -> {
+                    JsonNode quiz = read(r.getPayload());
+                    JsonNode courseId = quiz.get("courseId");
+                    boolean legacy = courseId == null || courseId.isNull();
+                    if (quizAuthorId != null && !legacy
+                            && !("teacher".equals(r.getAuthorRole()) && quizAuthorId.equals(r.getAuthorId()))) {
+                        return;
+                    }
+                    if (studentCourseIds != null && !legacy && !studentCourseIds.contains(courseId.asInt())) {
+                        return;
+                    }
+                    quizzes.add(quiz);
+                });
 
         ArrayNode resources = out.putArray("resources");
         records.findByKindOrderByCreatedAtAscRecordIdAsc(ClassRecordKind.RESOURCE)
@@ -214,13 +241,17 @@ public class LearningDataService {
         List<ClassRecordEntity> notes = records.findByKindOrderByCreatedAtAscRecordIdAsc(ClassRecordKind.INTERVENTION);
         for (int i = notes.size() - 1; i >= 0; i--) {
             ClassRecordEntity note = notes.get(i);
+            if (visibleStudents != null && !visibleStudents.contains(note.getStudent().getStudentId())) {
+                continue;
+            }
             String key = String.valueOf(note.getStudent().getStudentId());
             JsonNode existing = interventions.get(key);
             ArrayNode list = existing instanceof ArrayNode arr ? arr : interventions.putArray(key);
             list.add(read(note.getPayload()));
         }
 
-        records.findByKindOrderByCreatedAtAscRecordIdAsc(ClassRecordKind.STANDING)
+        records.findByKindOrderByCreatedAtAscRecordIdAsc(ClassRecordKind.STANDING).stream()
+                .filter(r -> visibleStudents == null || visibleStudents.contains(r.getStudent().getStudentId()))
                 .forEach(r -> standings.set(String.valueOf(r.getStudent().getStudentId()), read(r.getPayload())));
         return out;
     }
@@ -289,6 +320,12 @@ public class LearningDataService {
                 && entity.getStudent().getStudentId() != student.getStudentId()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "That record belongs to another student.");
         }
+        // A teacher edits only their own quizzes.
+        if (kind == ClassRecordKind.QUIZ && "teacher".equals(authorRole) && entity.getRecordId() != null
+                && "teacher".equals(entity.getAuthorRole()) && entity.getAuthorId() != null
+                && entity.getAuthorId() != authorId) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "That quiz belongs to another teacher.");
+        }
         entity.setStudent(student);
         entity.setPublished(kind == ClassRecordKind.QUIZ && body.path("published").asBoolean(false));
         entity.setAuthorRole(authorRole);
@@ -302,10 +339,22 @@ public class LearningDataService {
     /** Deletes a record. Deleting one that does not exist is not an error. */
     @Transactional
     public void deleteRecord(ClassRecordKind kind, String rawClientId) {
+        deleteRecord(kind, rawClientId, null, 0);
+    }
+
+    /** As above; a teacher (authorRole "teacher") may only delete their own quizzes. */
+    @Transactional
+    public void deleteRecord(ClassRecordKind kind, String rawClientId, String authorRole, int authorId) {
         if (kind == ClassRecordKind.SETTING) {
             throw bad("That record cannot be changed.");
         }
-        records.findByKindAndClientId(kind, clientId(rawClientId, "id")).ifPresent(records::delete);
+        records.findByKindAndClientId(kind, clientId(rawClientId, "id")).ifPresent(r -> {
+            if (kind == ClassRecordKind.QUIZ && "teacher".equals(authorRole) && "teacher".equals(r.getAuthorRole())
+                    && r.getAuthorId() != null && r.getAuthorId() != authorId) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "That quiz belongs to another teacher.");
+            }
+            records.delete(r);
+        });
     }
 
     /* ============================== ROSTER ============================== */
@@ -317,6 +366,15 @@ public class LearningDataService {
      */
     @Transactional(readOnly = true)
     public ArrayNode getRoster() {
+        return getRoster(null, Map.of());
+    }
+
+    /**
+     * As above, limited to visibleStudents when not null (a teacher's enrolled students), with each
+     * student's courses from coursesByStudent ({ id, title, section } objects).
+     */
+    @Transactional(readOnly = true)
+    public ArrayNode getRoster(Set<Integer> visibleStudents, Map<Integer, List<ObjectNode>> coursesByStudent) {
         Map<Integer, ArrayNode> byStudent = new HashMap<>();
         for (QuizAttemptEntity attempt : attempts.findAllByOrderByTakenAtAscAttemptIdAsc()) {
             JsonNode node = read(attempt.getPayload());
@@ -328,6 +386,7 @@ public class LearningDataService {
 
         ArrayNode out = json.createArrayNode();
         students.findAll().stream()
+                .filter(s -> visibleStudents == null || visibleStudents.contains(s.getStudentId()))
                 .sorted(Comparator.comparing(s -> s.getFullName() == null ? "" : s.getFullName().toLowerCase()))
                 .forEach(s -> {
                     ObjectNode row = out.addObject();
@@ -336,6 +395,8 @@ public class LearningDataService {
                     row.put("email", s.getEmail());
                     row.put("program", s.getProgram());
                     row.set("attempts", byStudent.getOrDefault(s.getStudentId(), json.createArrayNode()));
+                    ArrayNode courseList = row.putArray("courses");
+                    coursesByStudent.getOrDefault(s.getStudentId(), List.of()).forEach(courseList::add);
                 });
         return out;
     }

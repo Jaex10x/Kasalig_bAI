@@ -1,9 +1,12 @@
 import useAuth from '../../context/useAuth';
-import { COMPETENCIES, DIAGNOSTIC, QUESTION_BANK, SUBJECTS, topicById, topicsOf } from '../../data/curriculum';
+import { COMPETENCIES, DIAGNOSTICS, QUESTION_BANK, SUBJECTS, topicById, topicsOf } from '../../data/curriculum';
+
+const DIAGNOSTIC_IDS = new Set(DIAGNOSTICS.flatMap((d) => d.questionIds));
 import { MASTERY, masteryLevel } from '../../lib/engine';
 import { pctText, topicAverage } from '../../data/classData';
 import { useClassData, useClassRoster } from '../../store/learningStore';
-import { LevelChip } from '../../components/dashboard/DashWidgets';
+import { LevelChip, SectionTabs } from '../../components/dashboard/DashWidgets';
+import { TEACHER_TABS } from '../../components/dashboard/teacherTabs';
 
 /**
  * Curriculum alignment: every competency (MELC code) with whether it has been
@@ -17,7 +20,7 @@ export default function CurriculumMap() {
 
   const published = quizzes.filter((q) => q.published);
   const rows = COMPETENCIES.map((c) => {
-    const inDiagnostic = QUESTION_BANK.filter((q) => q.competencyId === c.id && DIAGNOSTIC.questionIds.includes(q.id)).length;
+    const inDiagnostic = QUESTION_BANK.filter((q) => q.competencyId === c.id && DIAGNOSTIC_IDS.has(q.id)).length;
     const inQuizzes = published.reduce((n, q) => n + q.questions.filter((x) => x.competencyId === c.id).length, 0);
     const mastery = topicAverage(students, c.topicId);
     return { ...c, topic: topicById(c.topicId), tested: inDiagnostic + inQuizzes, inDiagnostic, inQuizzes, mastery, isTaught: Boolean(taught[c.id]) };
@@ -41,6 +44,7 @@ export default function CurriculumMap() {
           <p>Each topic and question is mapped to a learning competency. See which ones have been taught, tested and mastered.</p>
         </div>
       </header>
+      {canEdit && <SectionTabs tabs={TEACHER_TABS.gaps} label="Gap analytics" />}
 
       <div className="kd-stat-tiles">
         {[

@@ -2,19 +2,8 @@
 import { useState } from 'react';
 import './AuthForm.css';
 
-const BrandMark = () => (
-  <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true">
-    <circle cx="16" cy="16" r="16" fill="#7A4A2B" />
-    <path
-      d="M14 9.5l1.4 3.6 3.6 1.4-3.6 1.4L14 19.5l-1.4-3.6L9 14.5l3.6-1.4L14 9.5z"
-      fill="#F0A35E"
-    />
-    <path
-      d="M20.5 16.5l.8 1.9 1.9.8-1.9.8-.8 1.9-.8-1.9-1.9-.8 1.9-.8.8-1.9z"
-      fill="#F0A35E"
-    />
-  </svg>
-);
+/** The Kasalig bAI "KB" logo (public/logo.png, transparent background). */
+const BrandMark = () => <img src="/logo.png" alt="" className="kb-auth-logo" />;
 
 const EyeIcon = ({ open }) => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -34,37 +23,41 @@ export function AuthLayout({
   badge,
   badgeVariant = 'student',
   title,
+  hideTitle = false,
   footerLinks = [],
   onNavigate,
   companion,
   children,
 }) {
+  // The brand sits above the card; the card starts with the portal badge.
   const card = (
-    <section className="kb-auth-card" aria-labelledby="kb-auth-title">
-      <header className="kb-auth-header">
-        <div className="kb-auth-brand">
-          <BrandMark />
-          <span className="kb-auth-brand-name">
-            Kasalig <span className="kb-auth-brand-accent">bAI</span>
-          </span>
-        </div>
-        <span className={`kb-auth-badge is-${badgeVariant}`}>{badge}</span>
-        <h1 id="kb-auth-title" className="kb-auth-title">{title}</h1>
-        <p className="kb-auth-tagline">Understand. Improve. Excel.</p>
-      </header>
+    <div className="kb-auth-column">
+      <div className="kb-auth-brand">
+        <BrandMark />
+        <span className="kb-auth-brand-name">
+          Kasalig <span className="kb-auth-brand-accent">bAI</span>
+        </span>
+      </div>
+      <section className="kb-auth-card" aria-labelledby="kb-auth-title">
+        <header className="kb-auth-header">
+          <span className={`kb-auth-badge is-${badgeVariant}`}>{badge}</span>
+          <h1 id="kb-auth-title" className={hideTitle ? 'kb-sr-only' : 'kb-auth-title'}>{title}</h1>
+          <p className="kb-auth-tagline">Understand. Improve. Excel.</p>
+        </header>
 
-      {children}
+        {children}
 
-      {footerLinks.length > 0 && (
-        <footer className="kb-auth-footer">
-          {footerLinks.map(({ label, page, href }) => (
-            <NavLink key={label} page={page} href={href} onNavigate={onNavigate}>
-              {label}
-            </NavLink>
-          ))}
-        </footer>
-      )}
-    </section>
+        {footerLinks.length > 0 && (
+          <footer className="kb-auth-footer">
+            {footerLinks.map(({ label, page, href }) => (
+              <NavLink key={label} page={page} href={href} onNavigate={onNavigate}>
+                {label}
+              </NavLink>
+            ))}
+          </footer>
+        )}
+      </section>
+    </div>
   );
 
   return (

@@ -5,6 +5,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import jakarta.persistence.*;
 
+/** A student enrolled in a course. A student is enrolled at most once per course. */
 @Entity
 @Table(name = "enrollment", uniqueConstraints = @UniqueConstraint(columnNames = { "student_id", "course_id" }))
 public class EnrollmentEntity {
@@ -12,13 +13,16 @@ public class EnrollmentEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int enrollmentId;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "student_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
     private StudentEntity student;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "course_id")
     private CourseEntity course;
+
     private LocalDate enrolledOn;
 
     public EnrollmentEntity() {

@@ -3,6 +3,8 @@ import { BUILT_IN_MATERIALS, TOPICS, competenciesOf, competencyById } from '../.
 import { formatDate } from '../../hooks/dashboardHooks';
 import { useClassData } from '../../store/learningStore';
 import { BookIcon, LinkIcon, PencilIcon, PlayIcon, PlusIcon, TrashIcon } from '../../components/dashboard/DashIcons';
+import { SectionTabs } from '../../components/dashboard/DashWidgets';
+import { TEACHER_TABS } from '../../components/dashboard/teacherTabs';
 
 const TYPES = ['Video', 'PDF', 'Worksheet', 'Link'];
 const ICONS = { Video: PlayIcon, PDF: BookIcon, Worksheet: PencilIcon, Link: LinkIcon };
@@ -46,6 +48,7 @@ export default function ResourceLibrary() {
           <p>Link videos, PDFs and worksheets to a topic. Kasalig recommends them to every student with a gap in that topic, inside their learning path.</p>
         </div>
       </header>
+      <SectionTabs tabs={TEACHER_TABS.assessments} label="Assessments" />
 
       <article className="kd-card">
         <header className="kd-card-head">
@@ -132,7 +135,7 @@ export default function ResourceLibrary() {
                     </li>
                   );
                 })}
-                {BUILT_IN_MATERIALS[t.id].map((m) => {
+                {(BUILT_IN_MATERIALS[t.id] ?? []).map((m) => {
                   const Icon = ICONS[m.type] ?? BookIcon;
                   return (
                     <li key={m.title}>

@@ -1,3 +1,4 @@
+import { NavLink } from 'react-router-dom';
 import { useCountUp } from '../../hooks/dashboardHooks';
 import { GAP_TYPES, LANGUAGES, SEVERITIES } from '../../data/curriculum';
 import { masteryLevel } from '../../lib/engine';
@@ -213,5 +214,18 @@ export function EmptyState({ icon = '🌱', title, children, action }) {
       {children && <p>{children}</p>}
       {action}
     </div>
+  );
+}
+
+/** Tabs between the pages of one sidebar section, e.g. Roster · Courses. tabs: [{ to, label }] */
+export function SectionTabs({ tabs, label }) {
+  return (
+    <nav className="kd-tabs kd-no-print" aria-label={label}>
+      {tabs.map((t) => (
+        <NavLink key={t.to} to={t.to} end className="kd-tab">
+          {t.label}
+        </NavLink>
+      ))}
+    </nav>
   );
 }

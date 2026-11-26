@@ -74,29 +74,48 @@ public class AdminService {
         return findTeacherById(teacherId);                       
     }
 
-    public TeacherEntity postTeacher(TeacherEntity body) {
-        if (teacherRepository.existsByEmailIgnoreCase(body.getEmail())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
+    /**
+     * Creates a teacher account. Teachers cannot sign themselves up: only an admin creates them,
+     * with a starting password the admin passes on. adminId is the admin creating the account.
+     */
+    public TeacherEntity postTeacher(TeacherEntity body, int adminId) {
+        String fullName = Require.text(body.getFullName(), "Full name");
+        String email = validEmail(body.getEmail());
+        if (teacherRepository.existsByEmailIgnoreCase(email)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "That email is already used by another teacher.");
         }
-        TeacherEntity teacher = new TeacherEntity(body.getFullName(), normalize(body.getEmail()));
-        teacher.setAdmin(findAdmin(body.getAdmin()));
-        teacher.setPasswordHash(passwordHasher.hashIfProvided(body.getPassword()));
+        TeacherEntity teacher = new TeacherEntity(fullName, email);
+        teacher.setAdmin(getAdmin(adminId));
+        teacher.setPasswordHash(passwordHasher.hash(body.getPassword()));
         return teacherRepository.save(teacher);
     }
 
+    /** Updates a teacher's name and email; a non-blank password resets their password. */
     @Transactional
     public TeacherEntity putTeacher(int teacherId, TeacherEntity body) {
-        TeacherEntity teacher = findTeacherById(teacherId);     
-        if (!teacher.getEmail().equalsIgnoreCase(body.getEmail())
-                && teacherRepository.existsByEmailIgnoreCase(body.getEmail())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
+        TeacherEntity teacher = findTeacherById(teacherId);
+        String fullName = Require.text(body.getFullName(), "Full name");
+        String email = validEmail(body.getEmail());
+        if (!teacher.getEmail().equalsIgnoreCase(email) && teacherRepository.existsByEmailIgnoreCase(email)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "That email is already used by another teacher.");
         }
-        teacher.setFullName(body.getFullName());
-        teacher.setEmail(normalize(body.getEmail()));
+        teacher.setFullName(fullName);
+        teacher.setEmail(email);
         if (body.getAdmin() != null) {
             teacher.setAdmin(findAdmin(body.getAdmin()));
         }
+        if (body.getPassword() != null && !body.getPassword().isBlank()) {
+            teacher.setPasswordHash(passwordHasher.hash(body.getPassword()));
+        }
         return teacherRepository.save(teacher);
+    }
+
+    private static String validEmail(String raw) {
+        String email = normalize(Require.text(raw, "Email"));
+        if (!Require.isEmail(email)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Enter a valid email address.");
+        }
+        return email;
     }
 
     public TeacherEntity deleteTeacher(int teacherId) {
@@ -109,7 +128,7 @@ public class AdminService {
         long courses = courseRepository.countByTeacherTeacherId(teacherId);
         if (courses > 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Teacher still has " + courses + " course(s). Reassign or delete them first.");
+                    "Teacher still handles " + courses + " course(s). They need to delete them first.");
         }
         teacherRepository.delete(teacher);
         return teacher;
