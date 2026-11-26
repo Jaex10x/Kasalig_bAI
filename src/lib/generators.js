@@ -5,6 +5,8 @@
  * in curriculum.js, plus `hints`: the solution steps, without the final answer.
  * ------------------------------------------------------------------------- */
 
+import { QUESTION_BANK } from '../data/curriculum';
+
 const randInt = (min, max) => min + Math.floor(Math.random() * (max - min + 1));
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
 const shuffle = (list) => {
@@ -352,9 +354,36 @@ const GENERATORS = {
   },
 };
 
-/** A new question for a topic at difficulty 1–3. */
+/* The questions shown recently per topic, so the bank fallback does not repeat itself. */
+const recentByTopic = new Map();
+
+/**
+ * A question from the bank for a topic with no generator (e.g. the college subjects): the
+ * nearest difficulty first, skipping the last few shown when there is a choice.
+ */
+function fromBank(topicId, d) {
+  const all = QUESTION_BANK.filter((q) => q.topicId === topicId);
+  if (!all.length) throw new Error(`No questions for topic ${topicId}`);
+  const recent = recentByTopic.get(topicId) ?? [];
+  const byDistance = [...all].sort((a, b) => Math.abs(a.difficulty - d) - Math.abs(b.difficulty - d));
+  const nearest = byDistance.filter((q) => Math.abs(q.difficulty - d) === Math.abs(byDistance[0].difficulty - d));
+  const fresh = nearest.filter((q) => !recent.includes(q.id));
+  const pool = fresh.length ? fresh : byDistance.filter((q) => !recent.includes(q.id)).length ? byDistance.filter((q) => !recent.includes(q.id)) : all;
+  const q = pick(pool);
+  recentByTopic.set(topicId, [...recent, q.id].slice(-Math.max(1, Math.min(3, all.length - 1))));
+  return { ...q, hints: q.hints ?? [q.explanation], bankId: q.id };
+}
+
+/**
+ * A new question for a topic at difficulty 1–3: freshly generated when the topic has a
+ * generator (the Algebra topics), otherwise taken from the question bank.
+ */
 export function generateQuestion(topicId, level = 2) {
   const d = Math.max(1, Math.min(3, level));
+  if (!GENERATORS[topicId]) {
+    const q = fromBank(topicId, d);
+    return { ...q, id: newId(topicId), generated: false };
+  }
   const q = GENERATORS[topicId](d);
   return { ...q, id: newId(topicId), difficulty: d, generated: true };
 }

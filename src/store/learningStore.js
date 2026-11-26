@@ -18,8 +18,7 @@
  * ------------------------------------------------------------------------- */
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import useAuth from '../context/useAuth';
-import { DIAGNOSTIC, questionById } from '../data/curriculum';
-import { nextPractice, practiceFor, sampleHistory } from '../lib/engine';
+import { nextPractice, practiceFor } from '../lib/engine';
 import { SEED_CLASSES } from '../data/schoolData';
 import { buildRoster, sampleRoster } from '../data/classData';
 import { learningApi } from '../services/learningApi';
@@ -249,10 +248,6 @@ export function useStudentData() {
           practiceTotal: (d.practiceTotal ?? 0) + 1,
           activity: [...d.activity.slice(-199), Date.now()],
         })),
-      loadSampleHistory: () => {
-        const sample = sampleHistory(DIAGNOSTIC.questionIds.map(questionById));
-        change(key, (d) => ({ ...d, attempts: [...sample, ...d.attempts] }), saveAttempts(sample));
-      },
       clearHistory: () =>
         change(
           key,
@@ -267,7 +262,7 @@ export function useStudentData() {
 
 /* --- Class (teachers write; students see published quizzes and resources) -- */
 
-const CLASS_DEFAULT = { quizzes: [], resources: [], taught: {}, interventions: {}, standings: {} };
+const CLASS_DEFAULT = { quizzes: [], resources: [], taught: {}, interventions: {}, standings: {}, myCourses: [] };
 
 export function useClassData() {
   const { isPreview, api, scope } = useSession();

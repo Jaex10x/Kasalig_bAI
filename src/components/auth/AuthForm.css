@@ -75,15 +75,30 @@
   border-bottom: 1px solid var(--kb-divider);
 }
 
+.kb-auth-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 380px;
+}
+
 .kb-auth-brand {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+}
+
+.kb-auth-logo {
+  display: block;
+  width: auto;
+  height: 44px;
 }
 
 .kb-auth-brand-name {
-  font-size: 19px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
   color: var(--kb-brown);
   letter-spacing: -0.2px;
 }
@@ -93,7 +108,6 @@
 }
 
 .kb-auth-badge {
-  margin-top: 14px;
   padding: 3px 8px;
   border-radius: 4px;
   background: var(--kb-orange);
@@ -581,4 +595,17 @@
   .kb-auth-title {
     font-size: 23px;
   }
+}
+
+/* Read by screen readers, not shown (e.g. a login heading the design leaves out). */
+.kb-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }

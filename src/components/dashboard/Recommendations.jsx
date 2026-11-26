@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { SEVERITIES } from '../../data/curriculum';
-import { formatDate, useStudentProgress } from '../../hooks/dashboardHooks';
+import { formatDate } from '../../hooks/dashboardHooks';
 import { GapTypeChip, SeverityChip } from './DashWidgets';
-import { ArrowIcon, BookIcon, BulbIcon, CapyFace, ChatIcon, CheckIcon, LinkIcon, PencilIcon, PlayIcon, QuizIcon, SparkleIcon } from './DashIcons';
+import { ArrowIcon, BookIcon, BulbIcon, ChatIcon, CheckIcon, LinkIcon, PencilIcon, PlayIcon, QuizIcon, SparkleIcon } from './DashIcons';
 
 const KINDS = {
   lesson: { label: 'Short lesson', icon: BookIcon, cta: 'Read it' },
@@ -11,6 +11,7 @@ const KINDS = {
   resource: { label: 'Study material', icon: PlayIcon, cta: 'Open' },
   tutor: { label: 'Ask Kasalig', icon: ChatIcon, cta: 'Start chat' },
   quiz: { label: 'Quiz', icon: QuizIcon, cta: 'Start' },
+  enroll: { label: 'Enrollment', icon: BookIcon, cta: 'Find my classes' },
 };
 
 /** One recommendation: what to do, why it was picked, and a button to do it. */
@@ -117,69 +118,6 @@ export function ChangesPanel({ changes, compact = false, onSeen }) {
         <button type="button" className="kd-icon-btn kd-icon-btn-sm" onClick={onSeen} aria-label="Dismiss">
           ×
         </button>
-      )}
-    </section>
-  );
-}
-
-/** Count of open recommendations, for the navigation. */
-export function RecBadge() {
-  const { recs } = useStudentProgress();
-  if (!recs.length) return null;
-  return (
-    <span className="kd-nav-badge" aria-label={`${recs.length} recommendations`}>
-      {recs.length > 9 ? '9+' : recs.length}
-    </span>
-  );
-}
-
-/**
- * Kasalig's review of how the student is learning: a verdict, what's holding them
- * back (each with evidence and a fix) and what's working. `compact` shows the top point only.
- */
-export function StudyReview({ review, title = 'Kasalig\u2019s review of how you study', compact = false, max = 4 }) {
-  if (!review?.stats) return null;
-  const critiques = review.critiques.slice(0, compact ? 1 : max);
-  return (
-    <section className={`kd-review-card ${compact ? 'is-compact' : ''}`}>
-      <header className="kd-review-card-head">
-        <CapyFace size={compact ? 36 : 46} />
-        <div>
-          <p className="kd-review-card-label">{title}</p>
-          <p className="kd-review-verdict">{review.verdict}</p>
-        </div>
-      </header>
-
-      {critiques.length > 0 && (
-        <div className="kd-critiques">
-          {!compact && <h3>What&rsquo;s holding you back</h3>}
-          <ol>
-            {critiques.map((c) => (
-              <li key={c.id}>
-                <strong>{c.title}</strong>
-                <p>
-                  <span className="kd-tag-evidence">Evidence</span> {c.evidence}
-                </p>
-                <p className="kd-advice">
-                  <span className="kd-tag-advice">Try this</span> {c.advice}
-                </p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
-
-      {!compact && review.strengths.length > 0 && (
-        <div className="kd-strengths">
-          <h3>What&rsquo;s working</h3>
-          <ul>
-            {review.strengths.map((s) => (
-              <li key={s.title}>
-                <CheckIcon size={15} /> <strong>{s.title}:</strong> {s.evidence}
-              </li>
-            ))}
-          </ul>
-        </div>
       )}
     </section>
   );

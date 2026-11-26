@@ -6,10 +6,21 @@
  * against the official MELC list for your grade level before release.
  * The Filipino and Cebuano lesson text should be reviewed by a native speaker.
  * ------------------------------------------------------------------------- */
+import {
+  COLLEGE_COMPETENCIES,
+  COLLEGE_DIAGNOSTICS,
+  COLLEGE_LESSONS,
+  COLLEGE_MATERIALS,
+  COLLEGE_QUESTIONS,
+  COLLEGE_SUBJECTS,
+  COLLEGE_TOPICS,
+} from './collegeContent';
+
 
 export const SUBJECTS = [
-  { id: 'foundations', name: 'Algebra Foundations', grade: 'Grades 7–8', color: '#de7a40', tint: '#fdeee3' },
-  { id: 'math9', name: 'Mathematics 9', grade: 'Grade 9', color: '#8b5cf6', tint: '#f1ecfe' },
+  { id: 'foundations', name: 'Algebra Foundations', grade: 'Math refresher', color: '#de7a40', tint: '#fdeee3' },
+  { id: 'math9', name: 'Intermediate Algebra', grade: 'Math refresher', color: '#8b5cf6', tint: '#f1ecfe' },
+  ...COLLEGE_SUBJECTS,
 ];
 
 /* `prereqs` drives "fix the prerequisite first": a topic's gaps are ordered after
@@ -21,6 +32,7 @@ export const TOPICS = [
   { id: 'roots', subjectId: 'math9', name: 'Nature of Roots', blurb: 'Reading the discriminant', color: '#0ea5e9', tint: '#e0f2fe', prereqs: ['quadratic'] },
   { id: 'exponents', subjectId: 'math9', name: 'Integral Exponents', blurb: 'Zero, negative and combined powers', color: '#10b981', tint: '#e3f8f0', prereqs: [] },
   { id: 'radicals', subjectId: 'math9', name: 'Radical Expressions', blurb: 'Simplifying and combining roots', color: '#8b5cf6', tint: '#f1ecfe', prereqs: ['exponents'] },
+  ...COLLEGE_TOPICS,
 ];
 
 export const COMPETENCIES = [
@@ -31,6 +43,7 @@ export const COMPETENCIES = [
   { id: 'c-roots', topicId: 'roots', code: 'M9AL-Ic-1', text: 'Characterizes the roots of a quadratic equation using the discriminant.' },
   { id: 'c-exponents', topicId: 'exponents', code: 'M9AL-IIe-1', text: 'Applies the laws involving positive integral exponents to zero and negative integral exponents.' },
   { id: 'c-radicals', topicId: 'radicals', code: 'M9AL-IIf-2', text: 'Simplifies radical expressions using the laws of radicals.' },
+  ...COLLEGE_COMPETENCIES,
 ];
 
 export const topicById = (id) => TOPICS.find((t) => t.id === id);
@@ -234,6 +247,7 @@ export const LESSONS = {
       ],
     },
   },
+  ...COLLEGE_LESSONS,
 };
 
 /* Built-in study material per topic, shown next to the teacher's own resources. */
@@ -262,6 +276,7 @@ export const BUILT_IN_MATERIALS = {
     { type: 'Video', title: 'Simplifying roots with perfect squares', minutes: 5 },
     { type: 'Worksheet', title: 'Adding like radicals', minutes: 6 },
   ],
+  ...COLLEGE_MATERIALS,
 };
 
 /* The question bank.
@@ -419,6 +434,7 @@ export const QUESTION_BANK = [
     answer: true,
     explanation: 'This is the product law of radicals.',
   },
+  ...COLLEGE_QUESTIONS,
 ];
 
 export const questionById = (id) => QUESTION_BANK.find((q) => q.id === id);
@@ -426,7 +442,7 @@ export const questionById = (id) => QUESTION_BANK.find((q) => q.id === id);
 /* The built-in diagnostic: two questions per topic, all three question types. */
 export const DIAGNOSTIC = {
   id: 'diagnostic',
-  title: 'Algebra Diagnostic',
+  title: 'Math Foundations Diagnostic',
   description: 'Covers every topic once, so your first learning path has something to work with.',
   minutes: 10,
   builtIn: true,
@@ -435,3 +451,24 @@ export const DIAGNOSTIC = {
 
 export const QUESTION_TYPE_LABELS = { mc: 'Multiple choice', id: 'Identification', tf: 'True or false' };
 export const DIFFICULTY_LABELS = { 1: 'Easy', 2: 'Medium', 3: 'Hard' };
+
+/* Every built-in diagnostic. A subject diagnostic is offered to students enrolled in that
+   subject's course. (The Math Foundations one is kept for older results but offered to no one.) */
+export const DIAGNOSTICS = [DIAGNOSTIC, ...COLLEGE_DIAGNOSTICS];
+export const diagnosticById = (id) => DIAGNOSTICS.find((d) => d.id === id);
+
+/** The built-in subject whose curriculum code matches, e.g. "CSIT221" → Data Structures. */
+export const subjectForCourseCode = (code) =>
+  code ? SUBJECTS.find((s) => s.courseCode && s.courseCode === String(code).toUpperCase()) ?? null : null;
+
+/** Diagnostics a student can take: one per enrolled course whose subject has built-in content. */
+export function diagnosticsForCourseCodes(codes = []) {
+  const wanted = new Set(codes.filter(Boolean).map((c) => String(c).toUpperCase()));
+  return COLLEGE_DIAGNOSTICS.filter((d) => wanted.has(d.courseCode));
+}
+
+/** The topics of the built-in subjects for these course codes (empty when none has content). */
+export function topicsForCourseCodes(codes = []) {
+  const ids = new Set(codes.map(subjectForCourseCode).filter(Boolean).map((s) => s.id));
+  return TOPICS.filter((t) => ids.has(t.subjectId));
+}

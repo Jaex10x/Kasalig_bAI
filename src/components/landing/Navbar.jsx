@@ -9,7 +9,6 @@ export const Navbar = ({ onNavigate }) => {
     { name: 'How It Works', href: '#how-it-works' },
     { name: 'Explore', href: '#features' },
     { name: 'Features', href: '#features' },
-    { name: 'For Teachers', href: '#features' },
   ];
 
   const handleLinkClick = (name, href, e) => {
@@ -35,7 +34,7 @@ export const Navbar = ({ onNavigate }) => {
           className="kasalig-logo-link" 
           onClick={(e) => handleLinkClick('Home', '#home', e)}
         >
-          <LogoIcon size={32} />
+          <LogoIcon size={38} />
           <div className="kasalig-logo-text">
             <span className="kasalig-brand-name">
               <strong>Kasalig</strong> <span className="kasalig-brand-accent">bAI</span>

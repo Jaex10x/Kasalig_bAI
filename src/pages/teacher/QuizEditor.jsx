@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   DIFFICULTY_LABELS,
@@ -7,13 +7,34 @@ import {
   SUBJECTS,
   TOPICS,
   competenciesOf,
+  subjectForCourseCode,
   topicById,
 } from '../../data/curriculum';
+import useAuth from '../../context/useAuth';
+import { coursesApi } from '../../services/coursesApi';
+import { courseLabel } from '../../data/bsitCurriculum';
 import { correctText } from '../../lib/engine';
 import { generateQuestion } from '../../lib/generators';
 import { useClassData } from '../../store/learningStore';
 import { EmptyState } from '../../components/dashboard/DashWidgets';
 import { BackIcon, PlusIcon, SparkleIcon, TrashIcon } from '../../components/dashboard/DashIcons';
+
+/** <option>s for a topic picker: the subject's own topics first, then every other topic. */
+function TopicOptions({ subjectId }) {
+  const own = TOPICS.filter((t) => t.subjectId === subjectId);
+  const rest = TOPICS.filter((t) => t.subjectId !== subjectId);
+  if (!own.length) return TOPICS.map((t) => <option key={t.id} value={t.id}>{t.name}</option>);
+  return (
+    <>
+      <optgroup label="This subject">
+        {own.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+      </optgroup>
+      <optgroup label="Other topics">
+        {rest.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+      </optgroup>
+    </>
+  );
+}
 
 let seq = 0;
 const qid = () => `tq-${Date.now().toString(36)}-${(seq++).toString(36)}`;
@@ -59,16 +80,38 @@ export default function QuizEditor() {
 
 function QuizEditorForm({ quizId }) {
   const navigate = useNavigate();
+  const { authRequest, isPreview } = useAuth();
   const { quizzes, saveQuiz, newId } = useClassData();
   const existing = quizId === 'new' ? null : quizzes.find((q) => q.id === quizId);
+
+  // The teacher's courses: every quiz belongs to one, and only its students see it.
+  const api = useMemo(() => coursesApi(authRequest), [authRequest]);
+  const [courses, setCourses] = useState(isPreview ? [] : null);
+  useEffect(() => {
+    if (isPreview) return;
+    api.list().then((list) => setCourses(Array.isArray(list) ? list : [])).catch(() => setCourses([]));
+  }, [api, isPreview]);
 
   const [meta, setMeta] = useState(() => ({
     title: existing?.title ?? '',
     description: existing?.description ?? '',
-    subjectId: existing?.subjectId ?? 'math9',
+    courseId: existing?.courseId ? String(existing.courseId) : '',
+    subjectId: existing?.subjectId ?? 'csit121',
   }));
   const [questions, setQuestions] = useState(() => (existing ? existing.questions.map(toForm) : []));
-  const [gen, setGen] = useState({ topicId: 'quadratic', difficulty: 2, count: 3 });
+  const [gen, setGen] = useState(() => ({
+    topicId: TOPICS.find((t) => t.subjectId === (existing?.subjectId ?? 'csit121'))?.id ?? TOPICS[0].id,
+    difficulty: 2,
+    count: 3,
+  }));
+
+  /** Choosing a course also picks its subject (and topics) when Kasalig has content for it. */
+  const pickCourse = (courseId) => {
+    const course = courses?.find((c) => String(c.id) === courseId);
+    const subject = subjectForCourseCode(course?.subjectCode);
+    setMeta((m) => ({ ...m, courseId, subjectId: subject?.id ?? m.subjectId }));
+    if (subject) setGen((g) => ({ ...g, topicId: TOPICS.find((t) => t.subjectId === subject.id)?.id ?? g.topicId }));
+  };
   const [drafts, setDrafts] = useState([]);
   const [errors, setErrors] = useState({});
 
@@ -106,6 +149,10 @@ function QuizEditorForm({ quizId }) {
   const save = (publish) => {
     const nextErrors = {};
     if (!meta.title.trim()) nextErrors.title = 'Give the quiz a title.';
+    const course = courses?.find((c) => String(c.id) === meta.courseId);
+    if (!isPreview && !course) {
+      nextErrors.courseId = courses?.length ? 'Pick the course this quiz is for.' : 'Create a course on the Courses page first.';
+    }
     if (!questions.length) nextErrors.questions = 'Add at least one question.';
     const built = questions.map((f) => {
       const { errors: e, question } = finalize(f);
@@ -122,6 +169,10 @@ function QuizEditorForm({ quizId }) {
       title: meta.title.trim(),
       description: meta.description.trim(),
       subjectId: meta.subjectId,
+      // Only students enrolled in this course see the quiz.
+      courseId: course ? course.id : null,
+      courseCode: course?.subjectCode ?? null,
+      courseLabel: course ? [courseLabel(course), course.section].filter(Boolean).join(' · ') : null,
       questions: built,
       published: publish,
     });
@@ -152,16 +203,40 @@ function QuizEditorForm({ quizId }) {
               className="kd-input"
               value={meta.title}
               onChange={(e) => setMeta({ ...meta, title: e.target.value })}
-              placeholder="e.g. Quadratic Equations – Quiz 2"
+              placeholder="e.g. CSIT221 – Linked Lists Quiz 1"
               aria-invalid={Boolean(errors.title)}
             />
             {errors.title && <small className="kd-field-error">{errors.title}</small>}
           </label>
           <label className="kd-field">
-            <span>Subject</span>
+            <span>Course</span>
+            <select
+              className="kd-select"
+              value={meta.courseId}
+              onChange={(e) => pickCourse(e.target.value)}
+              disabled={courses === null}
+              aria-invalid={Boolean(errors.courseId)}
+            >
+              <option value="">{courses === null ? 'Loading your courses…' : courses.length ? 'Pick a course…' : 'No courses yet'}</option>
+              {(courses ?? []).map((c) => (
+                <option key={c.id} value={String(c.id)}>
+                  {[courseLabel(c), c.section].filter(Boolean).join(' · ')}
+                </option>
+              ))}
+            </select>
+            {errors.courseId && <small className="kd-field-error">{errors.courseId}</small>}
+            {courses && !courses.length && !isPreview && (
+              <small className="kd-muted">
+                <Link to="/dashboard/courses">Create a course</Link> first; only its students see the quiz.
+              </small>
+            )}
+          </label>
+          <label className="kd-field">
+            <span>Topic set</span>
             <select className="kd-select" value={meta.subjectId} onChange={(e) => setMeta({ ...meta, subjectId: e.target.value })}>
               {SUBJECTS.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
+            <small className="kd-muted">Questions are tagged with these topics for gap detection.</small>
           </label>
           <label className="kd-field kd-field-wide">
             <span>Instructions for students (optional)</span>
@@ -176,14 +251,14 @@ function QuizEditorForm({ quizId }) {
             <h2>
               <SparkleIcon size={20} /> Draft questions for a topic
             </h2>
-            <p>Pick a topic and difficulty; review each draft before adding it. Drafts come from Kasalig&rsquo;s question templates.</p>
+            <p>Pick a topic and difficulty; review each draft before adding it. Drafts come from Kasalig&rsquo;s question templates and question bank.</p>
           </div>
         </header>
         <div className="kd-form-row">
           <label className="kd-field">
             <span>Topic</span>
             <select className="kd-select" value={gen.topicId} onChange={(e) => setGen({ ...gen, topicId: e.target.value })}>
-              {TOPICS.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              <TopicOptions subjectId={meta.subjectId} />
             </select>
           </label>
           <label className="kd-field">
@@ -265,7 +340,7 @@ function QuizEditorForm({ quizId }) {
                 <label className="kd-field">
                   <span>Topic</span>
                   <select className="kd-select" value={q.topicId} onChange={(e) => patch(q.key, { topicId: e.target.value, competencyId: competenciesOf(e.target.value)[0]?.id ?? '' })}>
-                    {TOPICS.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    <TopicOptions subjectId={meta.subjectId} />
                   </select>
                 </label>
                 <label className="kd-field kd-field-grow">

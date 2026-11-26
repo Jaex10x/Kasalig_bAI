@@ -85,8 +85,8 @@
   letter-spacing: -0.3px;
 }
 .kd-brand-link b { color: var(--kd-orange); }
-.kd-brand-link svg { flex: none; transition: transform 0.3s ease; }
-.kd-brand-link:hover svg { transform: rotate(-10deg) scale(1.06); }
+.kd-brand-link img { flex: none; transition: transform 0.3s ease; }
+.kd-brand-link:hover img { transform: rotate(-6deg) scale(1.06); }
 .kd-drawer-close { display: none; }
 
 .kd-nav-groups {
@@ -1979,7 +1979,7 @@ a.kd-stat-pill:hover { background: #fdeee3; color: var(--kd-orange); }
 .kd-report-sheet { display: flex; flex-direction: column; gap: 22px; }
 .kd-report-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .kd-report-head h1 { font-size: 26px; font-weight: 800; }
-.kd-report-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.kd-report-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .kd-report-stats > div { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 14px; border-radius: 16px; background: #fcf8f3; }
 .kd-report-stats small { color: var(--kd-muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; }
 .kd-report-stats strong { color: var(--kd-ink); font-size: 26px; font-weight: 800; line-height: 1.1; }
@@ -2310,24 +2310,6 @@ p.kd-q-errors { padding-left: 14px; }
 .kd-report-recs { display: flex; flex-direction: column; gap: 14px; }
 .kd-report-recs-title { font-size: 18px; font-weight: 800; }
 .kd-report-recs .kd-text-link { margin-top: 0; }
-.kd-rec-top-card { border: 1.5px solid #f6d7b8; }
-.kd-rec-top-card .kd-rec-list { gap: 16px; padding-left: 8px; }
-
-/* Nav badge */
-.kd-nav-badge {
-  display: inline-grid;
-  place-items: center;
-  min-width: 22px;
-  height: 22px;
-  margin-left: auto;
-  padding: 0 6px;
-  border-radius: 9999px;
-  background: var(--kd-orange);
-  color: #ffffff;
-  font-size: 11.5px;
-  font-weight: 800;
-}
-.kd-nav-link.active .kd-nav-badge { background: #ffffff; color: var(--kd-orange); }
 
 /* Teacher report: recommended plan */
 .kd-plan { display: flex; flex-direction: column; gap: 10px; padding-left: 20px; }
@@ -2336,85 +2318,233 @@ p.kd-q-errors { padding-left: 14px; }
 .kd-plan-top strong { color: var(--kd-ink); }
 .kd-plan p { margin-top: 4px; }
 
-@media (max-width: 1180px) {
-  .kd-nav-badge { position: absolute; top: 4px; right: 2px; min-width: 18px; height: 18px; padding: 0 4px; font-size: 10px; }
-}
 @media (max-width: 720px) {
-  .kd-nav-badge { position: static; }
   .kd-rec { grid-template-columns: 40px minmax(0, 1fr); padding: 14px; }
   .kd-rec-actions { grid-column: 2; flex-direction: row; align-items: center; justify-content: space-between; }
 }
 
-/* ---------- Study review (critique + advice) ---------- */
-.kd-review-card {
+
+/* ---------- Admin: teacher accounts ---------- */
+.kd-password-row { display: flex; gap: 8px; align-items: center; }
+.kd-password-row .kd-input { flex: 1; min-width: 0; }
+.kd-credentials {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 16px;
-  padding: 22px 24px;
-  border-radius: var(--kd-radius);
-  background: #ffffff;
-  border: 1.5px solid #ead9c7;
-  animation: kd-rise 0.4s ease both;
+  border: 1.5px solid #a7e3c5;
+  background: #f1fbf6;
 }
-.kd-card > .kd-review-card { padding: 0; border: 0; }
-.kd-review-card-head { display: flex; align-items: flex-start; gap: 14px; }
-.kd-review-card-head svg { flex: none; }
-.kd-review-card-label { color: var(--kd-orange); font-size: 12px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; }
-.kd-review-verdict { margin-top: 2px; color: var(--kd-ink); font-size: 19px; font-weight: 800; line-height: 1.35; }
-.kd-review-card h3 { margin-bottom: 10px; color: var(--kd-ink); font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+.kd-credentials h2 { font-size: 18px; font-weight: 800; color: var(--kd-ink); }
+.kd-credentials-list { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; margin-top: 12px; font-size: 14px; }
+.kd-credentials-list dt { color: var(--kd-muted); font-weight: 700; }
+.kd-credentials-list dd { color: var(--kd-ink); font-weight: 700; overflow-wrap: anywhere; }
 
-.kd-critiques ol { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; list-style: none; counter-reset: crit; }
-.kd-critiques li {
-  position: relative;
+/* ---------- Teacher: class overview ----------
+   Header, dark greeting banner, four key numbers, then "students falling behind" beside
+   topic mastery, then the heatmap. Uses the same cards, colours and type as the rest. */
+.kd-tov { grid-template-columns: minmax(0, 1fr); align-content: start; }
+
+.kd-tov-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 4px 6px 0; }
+.kd-tov-head h1 { color: var(--kd-ink); font-size: 30px; font-weight: 800; line-height: 1.1; letter-spacing: -0.6px; }
+.kd-tov-head p { margin-top: 4px; color: var(--kd-muted); font-size: 14px; font-weight: 600; }
+
+.kd-tov-banner {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 14px 16px 14px 46px;
-  border-radius: 16px;
-  background: #fef6f4;
-  border: 1px solid #f6d5cf;
-  counter-increment: crit;
-}
-.kd-critiques li::before {
-  content: counter(crit);
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 9999px;
-  background: #d4483a;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px 28px;
+  padding: 28px 32px;
+  background: var(--kd-dark);
+  border-radius: 30px;
   color: #ffffff;
-  font-size: 12px;
-  font-weight: 800;
+  animation: kd-rise 0.5s ease both;
 }
-.kd-critiques strong { color: var(--kd-ink); font-size: 15px; }
-.kd-critiques p { font-size: 13.5px; line-height: 1.5; }
-.kd-advice { color: var(--kd-ink); font-weight: 600; }
-.kd-tag-evidence,
-.kd-tag-advice {
+.kd-tov-banner h2 { color: #ffffff; font-size: 24px; font-weight: 800; letter-spacing: -0.4px; }
+.kd-tov-banner p { max-width: 620px; margin-top: 6px; color: rgba(255, 255, 255, 0.78); font-size: 14.5px; line-height: 1.5; }
+
+.kd-tov-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.kd-tov-stats .kd-stat-tile { animation: kd-rise 0.5s ease 0.05s both; }
+
+.kd-tov-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.kd-tov-side { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+.kd-tov-risk .kd-card-head h2 { display: flex; align-items: center; gap: 10px; }
+.kd-tov-link { flex: none; margin-top: 4px; }
+.kd-tov-risk-list { display: flex; flex-direction: column; list-style: none; }
+.kd-tov-risk-list > li {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto 52px auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--kd-line);
+  animation: kd-rise 0.45s ease var(--delay, 0ms) both;
+}
+.kd-tov-risk-list > li:first-child { border-top: 0; padding-top: 4px; }
+.kd-tov-risk-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.kd-tov-risk-body strong { color: var(--kd-ink); font-size: 15px; }
+.kd-tov-risk-pct { color: var(--kd-ink); font-size: 14px; font-weight: 800; text-align: right; }
+
+.kd-tov-bars { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 10px; list-style: none; }
+.kd-tov-bar { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; border-radius: 12px; }
+.kd-tov-bar:focus-visible { outline: 3px solid var(--kd-amber); outline-offset: 3px; }
+.kd-tov-bar-value { color: var(--kd-ink); font-size: 13px; font-weight: 800; }
+.kd-tov-bar-track { display: flex; align-items: flex-end; width: 100%; max-width: 46px; height: 140px; border-radius: 10px; background: #fcf8f3; overflow: hidden; }
+.kd-tov-bar-fill { width: 100%; border-radius: 10px 10px 0 0; transform-origin: bottom; animation: kd-tov-grow 0.7s ease both; }
+.kd-tov-bar:hover .kd-tov-bar-fill { filter: brightness(1.08); }
+.kd-tov-bar-label { color: var(--kd-ink); font-size: 12px; font-weight: 700; line-height: 1.25; }
+.kd-tov-bar small { color: var(--kd-muted); font-size: 11px; line-height: 1.3; }
+@keyframes kd-tov-grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+
+.kd-tov-cta { grid-area: auto; min-height: 280px; }
+.kd-tov-cta .kd-cta-title { max-width: 280px; font-size: 26px; }
+
+@media (max-width: 1180px) {
+  .kd-tov-grid { grid-template-columns: minmax(0, 1fr); }
+  .kd-tov-side { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+}
+@media (max-width: 860px) {
+  .kd-tov-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kd-tov-side { display: flex; }
+  .kd-tov-banner { padding: 24px; }
+}
+@media (max-width: 560px) {
+  .kd-tov-head h1 { font-size: 24px; }
+  .kd-tov-bars { grid-auto-flow: row; grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 18px; }
+  .kd-tov-risk-list > li { grid-template-columns: 38px minmax(0, 1fr) auto; }
+  .kd-tov-risk-list > li .kd-chip,
+  .kd-tov-risk-pct { grid-column: 2; justify-self: start; }
+  .kd-tov-risk-list > li .kd-btn { grid-column: 3; grid-row: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kd-tov-bar-fill, .kd-tov-banner, .kd-tov-stats .kd-stat-tile, .kd-tov-risk-list > li { animation: none; }
+}
+
+/* ---------- Teacher: courses and enrollment ---------- */
+.kd-courses { display: grid; grid-template-columns: minmax(260px, 0.8fr) minmax(0, 2fr); gap: 18px; align-items: start; }
+.kd-courses-side, .kd-courses-main { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.kd-course-list { display: flex; flex-direction: column; gap: 8px; list-style: none; }
+.kd-course-pick {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--kd-line);
+  border-radius: 16px;
+  background: #ffffff;
+  text-align: left;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.kd-course-pick:hover { border-color: #f6d7b8; }
+.kd-course-pick[aria-pressed='true'] { border-color: var(--kd-orange); background: #fff6ef; }
+.kd-course-pick:focus-visible { outline: 3px solid var(--kd-amber); outline-offset: 2px; }
+.kd-course-pick strong { display: block; color: var(--kd-ink); font-size: 14.5px; }
+.kd-course-pick small { color: var(--kd-muted); font-size: 12.5px; }
+.kd-form-stack { grid-template-columns: minmax(0, 1fr); }
+.kd-block { display: block; font-weight: 600; }
+@media (max-width: 1000px) {
+  .kd-courses { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------- Section tabs (e.g. Roster · Courses) ---------- */
+.kd-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 5px; width: fit-content; max-width: 100%; border-radius: 9999px; background: #ffffff; box-shadow: 0 1px 0 var(--kd-line); }
+.kd-tab { padding: 8px 18px; border-radius: 9999px; color: var(--kd-body); font-size: 14px; font-weight: 800; transition: background-color 0.2s ease, color 0.2s ease; }
+.kd-tab:hover { color: var(--kd-orange); }
+.kd-tab.active { background: var(--kd-dark); color: #ffffff; }
+.kd-tab:focus-visible { outline: 3px solid var(--kd-amber); outline-offset: 2px; }
+
+/* ---------- Teacher: gap analytics ---------- */
+.kd-gapan-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 18px; align-items: start; }
+.kd-gapan-types { display: flex; flex-direction: column; gap: 16px; list-style: none; }
+.kd-gapan-types li { display: flex; flex-direction: column; gap: 6px; }
+.kd-gapan-type-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.kd-gapan-type-top strong { color: var(--kd-ink); font-size: 18px; font-weight: 800; }
+.kd-gapan-track { display: block; height: 10px; border-radius: 9999px; background: #fcf8f3; overflow: hidden; }
+.kd-gapan-track span { display: block; height: 100%; border-radius: 9999px; transition: width 0.6s ease; }
+.kd-gapan-types small { font-size: 12.5px; line-height: 1.45; }
+.kd-gapan-students { display: flex; flex-direction: column; list-style: none; }
+.kd-gapan-students li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; padding: 12px 0; border-top: 1px solid var(--kd-line); }
+.kd-gapan-students li:first-child { border-top: 0; padding-top: 0; }
+.kd-sev-count { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; color: var(--kd-ink); font-size: 13px; }
+.kd-stat-tile strong.kd-stat-text { font-size: 24px; }
+
+/* ---------- Teacher: progress ---------- */
+.kd-spark { display: block; overflow: visible; }
+.kd-spark-goal { stroke: var(--kd-line); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.kd-up { color: #047857; }
+.kd-down { color: #b42318; }
+
+@media (max-width: 1000px) {
+  .kd-gapan-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------- Courses: curriculum subjects, self-enrollment ---------- */
+.kd-course-pick small { display: block; }
+.kd-switch-field { color: var(--kd-ink); font-size: 14px; font-weight: 700; }
+.kd-class-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; list-style: none; }
+.kd-class-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border: 1.5px solid var(--kd-line);
+  border-radius: 18px;
+  background: #ffffff;
+}
+.kd-class-card.is-enrolled { border-color: #a7e3c5; background: #f6fcf9; }
+.kd-class-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.kd-class-main strong { color: var(--kd-ink); font-size: 15px; line-height: 1.3; }
+.kd-class-main small { font-size: 12.5px; line-height: 1.4; }
+.kd-class-code { color: var(--kd-orange); font-size: 12px; font-weight: 800; letter-spacing: 0.5px; }
+.kd-class-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; }
+.kd-enroll-msg { padding: 12px 16px; border-radius: 14px; font-size: 14px; font-weight: 700; }
+.kd-enroll-msg.is-ok { background: #d9f5e8; color: #047857; }
+.kd-enroll-msg.is-error { background: #fde2df; color: #b42318; }
+
+/* ---------- Student: learning path (plain) ---------- */
+.kd-lp { display: flex; flex-direction: column; gap: 14px; }
+.kd-lp-card { padding: 22px 24px; border-radius: 16px; }
+.kd-lp-title { color: var(--kd-ink); font-size: 19px; font-weight: 800; }
+.kd-lp-meta { margin-top: 2px; color: var(--kd-muted); font-size: 13.5px; font-weight: 600; }
+.kd-lp-summary { margin-top: 10px; color: var(--kd-body); font-size: 14.5px; line-height: 1.55; }
+.kd-lp-note { margin-top: 8px; color: var(--kd-body); font-size: 13.5px; font-style: italic; }
+.kd-lp-steps { margin-top: 14px; list-style: none; border-top: 1px solid var(--kd-line); }
+.kd-lp-steps > li { padding: 12px 0; border-bottom: 1px solid var(--kd-line); }
+.kd-lp-steps > li:last-child { border-bottom: 0; padding-bottom: 0; }
+.kd-lp-steps strong { display: block; color: var(--kd-ink); font-size: 14.5px; font-weight: 700; }
+.kd-lp-step { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.kd-lp-status { color: var(--kd-muted); font-size: 13px; }
+.kd-lp-lesson { margin-top: 6px; }
+.kd-lp-lesson summary { width: fit-content; color: var(--kd-orange); font-size: 13.5px; font-weight: 700; cursor: pointer; }
+.kd-lp-lesson summary:focus-visible { outline: 2px solid var(--kd-amber); outline-offset: 2px; }
+.kd-lp-lesson > div { margin-top: 8px; color: var(--kd-body); font-size: 14px; line-height: 1.6; }
+.kd-lp-lesson ol { margin: 6px 0 10px; padding-left: 20px; }
+.kd-lp-res { margin-top: 4px; padding-left: 18px; font-size: 14px; line-height: 1.7; }
+.kd-lp-res a { color: var(--kd-ink); text-decoration: underline; text-underline-offset: 2px; }
+.kd-lp-res a:hover { color: var(--kd-orange); }
+.kd-lp-btn {
+  flex: none;
   display: inline-block;
-  margin-right: 4px;
-  padding: 1px 7px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  vertical-align: 1px;
+  padding: 7px 16px;
+  border: 1px solid var(--kd-line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--kd-ink);
+  font-size: 13.5px;
+  font-weight: 700;
+  white-space: nowrap;
 }
-.kd-tag-evidence { background: #f3ece3; color: var(--kd-body); }
-.kd-tag-advice { background: #d9f5e8; color: #047857; }
-
-.kd-strengths ul { display: flex; flex-direction: column; gap: 6px; list-style: none; font-size: 13.5px; }
-.kd-strengths li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px; }
-.kd-strengths svg { color: #10b981; align-self: center; }
-.kd-strengths strong { color: var(--kd-ink); }
-
-.kd-review-card.is-compact { padding: 14px 16px; gap: 10px; background: #fffaf7; }
-.kd-review-card.is-compact .kd-review-verdict { font-size: 15px; }
-.kd-review-card.is-compact .kd-critiques ol { grid-template-columns: minmax(0, 1fr); }
-.kd-review-card.is-compact .kd-critiques li { padding: 10px 12px 10px 40px; }
-.kd-review-card.is-compact .kd-critiques li::before { top: 11px; left: 11px; }
+.kd-lp-btn:hover { border-color: var(--kd-muted); }
+.kd-lp-btn.is-primary { border-color: var(--kd-dark); background: var(--kd-dark); color: #ffffff; }
+.kd-lp-btn.is-primary:hover { opacity: 0.9; }
+.kd-lp-btn[aria-disabled='true'] { color: var(--kd-muted); cursor: not-allowed; }
+.kd-lp-btn:focus-visible { outline: 2px solid var(--kd-amber); outline-offset: 2px; }
+@media (max-width: 560px) {
+  .kd-lp-step { flex-direction: column; align-items: flex-start; gap: 8px; }
+}

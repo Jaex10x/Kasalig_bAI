@@ -134,7 +134,7 @@ const makeMessage = (from, text) => ({ id: ++messageId, from, text });
 export default function TutorChat() {
   const { user } = useAuth();
   const location = useLocation();
-  const { student, gaps } = useStudentProgress();
+  const { student, gaps, topics: myTopics } = useStudentProgress();
   const lang = student.lang ?? 'en';
   const startTopicId = topicById(location.state?.topicId) ? location.state.topicId : null;
 
@@ -186,7 +186,7 @@ export default function TutorChat() {
 
   // Topics with open gaps first, so the student's weak spots are one tap away.
   const gapIds = gaps.map((g) => g.topic.id);
-  const topicChips = [...TOPICS].sort((a, b) => Number(gapIds.includes(b.id)) - Number(gapIds.includes(a.id)));
+  const topicChips = [...(myTopics.length ? myTopics : TOPICS)].sort((a, b) => Number(gapIds.includes(b.id)) - Number(gapIds.includes(a.id)));
   const hasProblem = Boolean(ctx.problem);
 
   return (

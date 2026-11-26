@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
-  DIAGNOSTIC,
   DIFFICULTY_LABELS,
+  diagnosticById,
   QUESTION_TYPE_LABELS,
   competencyById,
   questionById,
@@ -14,7 +14,7 @@ import { EmptyState, QuestionInput } from '../../components/dashboard/DashWidget
 import { ArrowIcon, BackIcon, ClockIcon, XIcon } from '../../components/dashboard/DashIcons';
 
 /** Load the quiz for the URL: the diagnostic, a teacher quiz, or a mastery check for one topic. */
-function useQuizDefinition(mode, quizId, topicId, teacherQuizzes) {
+function useQuizDefinition(mode, quizId, topicId, teacherQuizzes, diagnostics) {
   const [checkQuestions] = useState(() => (mode === 'check' && topicById(topicId) ? buildMasteryCheck(topicId) : null));
   if (mode === 'check') {
     const topic = topicById(topicId);
@@ -25,11 +25,13 @@ function useQuizDefinition(mode, quizId, topicId, teacherQuizzes) {
       subtitle: `${CHECK_SIZE} questions · get ${CHECK_PASS} right to close the gap`,
     };
   }
-  if (quizId === DIAGNOSTIC.id) {
+  // Only the diagnostics of the student's own classes can be taken.
+  const diag = diagnosticById(quizId);
+  if (diag && diagnostics.some((d) => d.id === diag.id)) {
     return {
-      quiz: DIAGNOSTIC,
-      questions: DIAGNOSTIC.questionIds.map(questionById),
-      subtitle: `About ${DIAGNOSTIC.minutes} minutes · graded at the end`,
+      quiz: diag,
+      questions: diag.questionIds.map(questionById),
+      subtitle: `About ${diag.minutes} minutes · graded at the end`,
     };
   }
   const quiz = teacherQuizzes.find((q) => q.id === quizId);
@@ -46,8 +48,8 @@ export default function QuizScreen({ mode = 'quiz' }) {
 /** Takes a quiz one question at a time, then grades it and opens the gap report. */
 function QuizRunner({ mode, quizId, topicId }) {
   const navigate = useNavigate();
-  const { student, status, quizzes } = useStudentProgress();
-  const def = useQuizDefinition(mode, quizId, topicId, quizzes);
+  const { student, status, quizzes, attempts, diagnostics } = useStudentProgress();
+  const def = useQuizDefinition(mode, quizId, topicId, quizzes, diagnostics);
 
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -94,7 +96,10 @@ function QuizRunner({ mode, quizId, topicId }) {
     questions.forEach((q) => {
       responses[q.id] = { value: answers[q.id], ms: Math.round(times.current[q.id] ?? 0) };
     });
-    const attempt = gradeAttempt({ quiz, questions, responses, kind: mode, topicId: topicId ?? null, prior: status });
+    // A mastery check belongs to the class whose result opened the gap.
+    const source = mode === 'check' ? attempts.find((a) => a.id === status[topicId]?.gap?.attemptId) : null;
+    const graded = source ? { ...quiz, courseId: source.courseId, courseCode: source.courseCode } : quiz;
+    const attempt = gradeAttempt({ quiz: graded, questions, responses, kind: mode, topicId: topicId ?? null, prior: status });
     student.saveAttempt(attempt);
     navigate(`/dashboard/results/${attempt.id}`, { state: { fresh: true } });
   };

@@ -139,12 +139,9 @@ export const XIcon = (p) => (
   </Svg>
 );
 
+/** The Kasalig bAI "KB" mark (public/logo.png). `size` is its height. */
 export const LogoMark = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 36 36" aria-hidden="true">
-    <circle cx="18" cy="18" r="18" fill="#de7a40" />
-    <path d="M18 7C18 7 13 14 13 19.5C13 22.5 15.2 25 18 25C20.8 25 23 22.5 23 19.5C23 14 18 7 18 7Z" fill="#fdf2e9" />
-    <circle cx="18" cy="20" r="3.5" fill="#b4531c" />
-  </svg>
+  <img src="/logo.png" alt="" height={size} style={{ height: size, width: 'auto', display: 'block' }} />
 );
 
 /** A small capybara face: the tutor's avatar. */
@@ -238,5 +235,39 @@ export const BulbIcon = (p) => (
   <Svg {...p}>
     <path d="M9 18h6M10 21h4" />
     <path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z" />
+  </Svg>
+);
+
+/** Two people: a class of students. */
+export const UsersIcon = (p) => (
+  <Svg {...p}>
+    <circle cx="9" cy="8" r="3.5" />
+    <path d="M2.5 20c1.2-3.4 3.6-5 6.5-5s5.3 1.6 6.5 5" />
+    <path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 15.3c1.7.6 2.9 2.1 3.5 4.7" />
+  </Svg>
+);
+
+/** A page with a folded corner: an assessment. */
+export const DocIcon = (p) => (
+  <Svg {...p}>
+    <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+    <path d="M14 3v5h5" />
+  </Svg>
+);
+
+/** A robot head: AI gap analytics. */
+export const BotIcon = (p) => (
+  <Svg {...p}>
+    <rect x="4" y="8" width="16" height="12" rx="3" />
+    <path d="M12 4v4M9 13v1M15 13v1M9.5 17h5M2 13v2M22 13v2" />
+    <circle cx="12" cy="3.5" r="1" />
+  </Svg>
+);
+
+/** Bars on an axis: progress over time. */
+export const BarsIcon = (p) => (
+  <Svg {...p}>
+    <path d="M4 4v16h16" />
+    <path d="M8 16v-4M12 16V8M16 16v-6" />
   </Svg>
 );

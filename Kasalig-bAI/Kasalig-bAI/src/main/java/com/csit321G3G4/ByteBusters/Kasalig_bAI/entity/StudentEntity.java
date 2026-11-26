@@ -21,7 +21,7 @@ public class StudentEntity {
     private TeacherEntity teacher;
     /**
      * The degree program picked at sign-up, e.g. "BS Information Technology". Shown as "Course" in
-     * the UI, but it is not a CourseEntity: the classes a student takes are their ENROLLMENT rows.
+     * the UI.
      */
     private String program;
     /** BCrypt hash of the password. Null while the account has no login. Never sent to clients. */

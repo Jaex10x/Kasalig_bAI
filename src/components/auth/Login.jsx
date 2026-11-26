@@ -7,7 +7,9 @@ import { pointAtForm } from './pointAtForm';
 const ROLE_CONFIG = {
   student: {
     badge: 'Student Portal',
-    title: 'Welcome back',
+    // No visible heading under the badge; screen readers still hear it.
+    title: 'Student sign in',
+    hideTitle: true,
     greeting: 'Hi there! Ready to learn today?',
     idLabel: 'Institutional email / Student ID',
     idPlaceholder: 'Email address / ID number',
@@ -27,6 +29,7 @@ const ROLE_CONFIG = {
   teacher: {
     badge: 'Teacher Portal',
     title: 'Teacher sign in',
+    hideTitle: true,
     greeting: 'Welcome, teacher! Ready for class?',
     endpoint: AUTH_ENDPOINTS.teacherLogin,
     idLabel: 'Institutional email',
@@ -206,6 +209,7 @@ export default function Login({ role = 'student', onSubmit, onLogin, onNavigate,
       badge={config.badge}
       badgeVariant={role === 'student' ? 'student' : 'teacher'}
       title={config.title}
+      hideTitle={config.hideTitle}
       footerLinks={config.footerLinks}
       onNavigate={onNavigate}
       companion={
@@ -238,8 +242,8 @@ export default function Login({ role = 'student', onSubmit, onLogin, onNavigate,
           <p className="kb-auth-note">Administrator accounts are created by the school. Contact IT if you need access.</p>
         ) : role === 'teacher' ? (
           <p className="kb-auth-note">
-            New teacher? Register with institutional credentials. Accounts are verified by
-            your school administrator.
+            Teacher accounts are created by your school administrator. Ask them for your login
+            details or a password reset.
           </p>
         ) : (
           <>

@@ -3,10 +3,14 @@ import { Link, Navigate, NavLink, Outlet, matchPath, useLocation, useNavigate } 
 import useAuth from '../../context/useAuth';
 import { useStaffGate, useStudentGate, useSyncError } from '../../store/learningStore';
 import { Avatar, EmptyState } from './DashWidgets';
-import { RecBadge } from './Recommendations';
+import PageErrorBoundary from './PageErrorBoundary';
 import {
+  BarsIcon,
+  BookIcon,
+  BotIcon,
   ChartIcon,
   ChatIcon,
+  DocIcon,
   HistoryIcon,
   HomeIcon,
   LibraryIcon,
@@ -15,8 +19,8 @@ import {
   MapIcon,
   PathIcon,
   QuizIcon,
-  SparkleIcon,
   UserIcon,
+  UsersIcon,
   XIcon,
 } from './DashIcons';
 import './Dashboard.css';
@@ -28,7 +32,7 @@ const NAV = {
       label: 'Learn',
       links: [
         { to: '/dashboard', label: 'Home', icon: HomeIcon, end: true },
-        { to: '/dashboard/for-you', label: 'For you', icon: SparkleIcon, badge: true },
+        { to: '/dashboard/my-courses', label: 'My courses', icon: BookIcon },
         { to: '/dashboard/quiz', label: 'Quizzes', icon: QuizIcon },
         { to: '/dashboard/path', label: 'Learning path', icon: PathIcon },
         { to: '/dashboard/tutor', label: 'Ask Kasalig', icon: ChatIcon },
@@ -42,20 +46,17 @@ const NAV = {
       ],
     },
   ],
+  // One list, no group headings. `also` keeps an item highlighted on the other tabs of its section.
   teacher: [
     {
-      label: 'My class',
+      label: null,
       links: [
-        { to: '/dashboard', label: 'Class dashboard', icon: HomeIcon, end: true },
-        { to: '/dashboard/students', label: 'Students', icon: UserIcon },
-      ],
-    },
-    {
-      label: 'Teaching tools',
-      links: [
-        { to: '/dashboard/quizzes', label: 'Quiz builder', icon: QuizIcon },
-        { to: '/dashboard/resources', label: 'Resource library', icon: LibraryIcon },
-        { to: '/dashboard/curriculum', label: 'Curriculum map', icon: MapIcon },
+        { to: '/dashboard', label: 'Dashboard', icon: HomeIcon, end: true },
+        { to: '/dashboard/courses', label: 'Courses', icon: BookIcon },
+        { to: '/dashboard/students', label: 'Students', icon: UsersIcon },
+        { to: '/dashboard/quizzes', label: 'Assessments', icon: DocIcon, also: ['/dashboard/resources'] },
+        { to: '/dashboard/gaps', label: 'Gap Analytics', icon: BotIcon, also: ['/dashboard/curriculum'] },
+        { to: '/dashboard/class-progress', label: 'Progress', icon: BarsIcon },
       ],
     },
   ],
@@ -64,6 +65,7 @@ const NAV = {
       label: 'School',
       links: [
         { to: '/dashboard', label: 'School analytics', icon: ChartIcon, end: true },
+        { to: '/dashboard/teachers', label: 'Teachers', icon: UserIcon },
         { to: '/dashboard/classes', label: 'Classes', icon: UserIcon },
         { to: '/dashboard/subjects', label: 'Subjects', icon: LibraryIcon },
       ],
@@ -88,7 +90,11 @@ export default function DashboardLayout() {
   // The page name for the phone top bar.
   const current = groups
     .flatMap((g) => g.links)
-    .find((l) => matchPath({ path: l.to, end: Boolean(l.end) }, location.pathname));
+    .find(
+      (l) =>
+        matchPath({ path: l.to, end: Boolean(l.end) }, location.pathname) ||
+        (l.also ?? []).some((p) => matchPath({ path: p, end: false }, location.pathname))
+    );
 
   // A one-off message handed over by the previous page (e.g. "Welcome back").
   const [flash, setFlash] = useState(location.state?.flash ?? null);
@@ -135,7 +141,7 @@ export default function DashboardLayout() {
         <nav id="kd-sidebar" className={`kd-sidebar kd-no-print ${menuOpen ? 'is-open' : ''}`} aria-label="Dashboard">
           <div className="kd-brand">
             <Link to="/dashboard" className="kd-brand-link" onClick={closeMenu}>
-              <LogoMark size={36} />
+              <LogoMark size={40} />
               <span>
                 Kasalig <b>bAI</b>
               </span>
@@ -147,15 +153,22 @@ export default function DashboardLayout() {
 
           <div className="kd-nav-groups">
             {groups.map((group) => (
-              <div key={group.label} className="kd-nav-group">
-                <p className="kd-nav-label">{group.label}</p>
+              <div key={group.label ?? 'main'} className="kd-nav-group">
+                {group.label && <p className="kd-nav-label">{group.label}</p>}
                 <ul>
-                  {group.links.map(({ to, label, icon: Icon, end, badge }) => (
+                  {group.links.map(({ to, label, icon: Icon, end, also = [] }) => (
                     <li key={to}>
-                      <NavLink to={to} end={end} className="kd-nav-link" data-tip={label} onClick={closeMenu}>
+                      <NavLink
+                        to={to}
+                        end={end}
+                        className={({ isActive }) =>
+                          `kd-nav-link${isActive || also.some((p) => matchPath({ path: p, end: false }, location.pathname)) ? ' active' : ''}`
+                        }
+                        data-tip={label}
+                        onClick={closeMenu}
+                      >
                         <Icon size={20} />
                         <span>{label}</span>
-                        {badge && <RecBadge />}
                       </NavLink>
                     </li>
                   ))}
@@ -211,7 +224,14 @@ function StaffGate() {
 
 /** Shows the page once its data has loaded from the server, with a retry if that failed. */
 function Gate({ status, error, retry }) {
-  if (status === 'ready') return <Outlet />;
+  const location = useLocation();
+  if (status === 'ready') {
+    return (
+      <PageErrorBoundary resetKey={location.pathname}>
+        <Outlet />
+      </PageErrorBoundary>
+    );
+  }
   if (status === 'error') {
     return (
       <section className="kd-stage kd-page">

@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom';
-import { DIAGNOSTIC, TOPICS, subjectById } from '../../data/curriculum';
+import { subjectById } from '../../data/curriculum';
 import { formatDate, useStudentProgress } from '../../hooks/dashboardHooks';
 import { EmptyState, LevelChip, MasteryRing, Sparkline } from '../../components/dashboard/DashWidgets';
 import { ArrowIcon } from '../../components/dashboard/DashIcons';
 
 /** Progress history: every saved result, scores by topic over time, streaks, badges, subject mastery. */
 export default function ProgressHistory() {
-  const { student, status, subjects, streak, badges } = useStudentProgress();
-  const attempts = [...student.attempts].sort((a, b) => b.takenAt - a.takenAt);
+  const { student, status, subjects, streak, badges, topics, attempts: mine, myCourses } = useStudentProgress();
+  const attempts = [...mine].sort((a, b) => b.takenAt - a.takenAt);
   const earned = badges.filter((b) => b.earned).length;
 
   if (!attempts.length) {
@@ -17,15 +17,16 @@ export default function ProgressHistory() {
           icon="📈"
           title="Your progress shows up here"
           action={
-            <div className="kd-row-actions">
-              <Link to={`/dashboard/quiz/${DIAGNOSTIC.id}`} className="kd-btn kd-btn-dark">Take the diagnostic</Link>
-              <button type="button" className="kd-btn kd-btn-ghost" onClick={student.loadSampleHistory}>
-                Load sample history
-              </button>
-            </div>
+            myCourses.length ? (
+              <Link to="/dashboard/quiz" className="kd-btn kd-btn-dark">Take a quiz</Link>
+            ) : (
+              <Link to="/dashboard/my-courses" className="kd-btn kd-btn-dark">Enroll in your classes</Link>
+            )
           }
         >
-          Every quiz and mastery check is saved, so you can watch each topic improve.
+          {myCourses.length
+            ? 'Every quiz and mastery check in your classes is saved, so you can watch each topic improve.'
+            : 'Enroll in your classes first. Their quizzes and results show up here as you take them.'}
         </EmptyState>
       </section>
     );
@@ -44,7 +45,7 @@ export default function ProgressHistory() {
       </header>
 
       <div className="kd-progress-top">
-        {subjects.map((s) => (
+        {subjects.filter((s) => s.tested > 0).map((s) => (
           <article key={s.id} className="kd-card kd-subject-card" style={{ '--c': s.color, '--t': s.tint }}>
             <MasteryRing value={s.value} size={112} stroke={11} tone="dark" color={s.color} label="mastery" />
             <div>
@@ -95,7 +96,7 @@ export default function ProgressHistory() {
           </div>
         </header>
         <ul className="kd-trends">
-          {TOPICS.map((t) => {
+          {topics.map((t) => {
             const s = status[t.id];
             const points = (s?.history ?? []).map((h) => h.pct);
             const change = points.length > 1 ? points.at(-1) - points[0] : null;
@@ -159,7 +160,6 @@ export default function ProgressHistory() {
                     {a.kind === 'check' && (
                       <span className={`kd-chip ${a.passed ? 'kd-chip-ok' : 'kd-chip-soft'}`}>{a.passed ? 'Gap closed' : 'Not passed'}</span>
                     )}
-                    {a.sample && <span className="kd-chip kd-chip-soft">Sample</span>}
                   </td>
                   <td>
                     <strong>{a.pct}%</strong> <span className="kd-muted">({a.correct}/{a.total})</span>

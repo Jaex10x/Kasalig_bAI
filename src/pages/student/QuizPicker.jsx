@@ -1,15 +1,19 @@
 import { Link } from 'react-router-dom';
-import { DIAGNOSTIC, QUESTION_TYPE_LABELS, questionById, topicById } from '../../data/curriculum';
+import { QUESTION_TYPE_LABELS, questionById, topicById } from '../../data/curriculum';
 import { formatDate, useStudentProgress } from '../../hooks/dashboardHooks';
 import { ArrowIcon, ClockIcon, QuizIcon } from '../../components/dashboard/DashIcons';
+import { EmptyState } from '../../components/dashboard/DashWidgets';
 
-/** Every quiz the student can take: the built-in diagnostic plus the teacher's published quizzes. */
+/**
+ * Every quiz the student can take: the diagnostics of their courses' subjects (plus the Math
+ * Foundations one) and the quizzes their teachers published for their courses.
+ */
 export default function QuizPicker() {
-  const { student, quizzes } = useStudentProgress();
+  const { attempts, quizzes, diagnostics, myCourses } = useStudentProgress();
 
   const all = [
-    { ...DIAGNOSTIC, questions: DIAGNOSTIC.questionIds.map(questionById), author: 'Kasalig bAI' },
     ...quizzes.map((q) => ({ ...q, minutes: Math.max(3, Math.round(q.questions.length * 0.8)), author: q.author ?? 'Your teacher' })),
+    ...diagnostics.map((d) => ({ ...d, questions: d.questionIds.map(questionById), author: 'Kasalig bAI' })),
   ];
 
   return (
@@ -22,18 +26,35 @@ export default function QuizPicker() {
         </div>
       </header>
 
+      {all.length === 0 && (
+        <article className="kd-card">
+          <EmptyState
+            icon="📝"
+            title={myCourses.length ? 'No quizzes in your classes yet' : 'Enroll in your classes first'}
+            action={!myCourses.length && <Link to="/dashboard/my-courses" className="kd-btn kd-btn-dark">Find my classes</Link>}
+          >
+            {myCourses.length
+              ? 'Your teachers have not published a quiz for your classes yet, and none of them has a built-in diagnostic.'
+              : 'Each class brings its diagnostic and your teachers’ quizzes.'}
+          </EmptyState>
+        </article>
+      )}
+
       <div className="kd-quiz-grid">
         {all.map((quiz, i) => {
           const topics = [...new Set(quiz.questions.map((q) => q.topicId))].map(topicById).filter(Boolean);
           const types = [...new Set(quiz.questions.map((q) => q.type))];
-          const last = [...student.attempts].filter((a) => a.quizId === quiz.id).sort((a, b) => b.takenAt - a.takenAt)[0];
+          const last = [...attempts].filter((a) => a.quizId === quiz.id).sort((a, b) => b.takenAt - a.takenAt)[0];
           return (
             <article key={quiz.id} className="kd-card kd-quiz-tile" style={{ '--delay': `${i * 60}ms` }}>
               <div className="kd-quiz-tile-top">
                 <span className="kd-quiz-tile-icon" aria-hidden="true">
                   <QuizIcon size={22} />
                 </span>
-                {quiz.builtIn ? <span className="kd-chip kd-chip-soft">Diagnostic</span> : <span className="kd-chip kd-chip-soft">From {quiz.author}</span>}
+                <span className="kd-chip-row">
+                  {(quiz.courseCode || quiz.subjectCode) && <span className="kd-chip kd-chip-ok">{quiz.courseCode ?? quiz.subjectCode}</span>}
+                  {quiz.builtIn ? <span className="kd-chip kd-chip-soft">Diagnostic</span> : <span className="kd-chip kd-chip-soft">From {quiz.author}</span>}
+                </span>
               </div>
               <h2>{quiz.title}</h2>
               {quiz.description && <p className="kd-muted">{quiz.description}</p>}
