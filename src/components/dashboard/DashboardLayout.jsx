@@ -4,6 +4,7 @@ import useAuth from '../../context/useAuth';
 import { useStaffGate, useStudentGate, useSyncError } from '../../store/learningStore';
 import { Avatar, EmptyState } from './DashWidgets';
 import PageErrorBoundary from './PageErrorBoundary';
+import ChatHead from './ChatHead';
 import {
   BarsIcon,
   BookIcon,
@@ -122,6 +123,9 @@ export default function DashboardLayout() {
 
   const closeMenu = () => setMenuOpen(false);
 
+  // The Kasalig chat head: students only, and not on the tutor page itself.
+  const showChatHead = user.role === 'student' && !matchPath({ path: '/dashboard/tutor', end: false }, location.pathname);
+
   return (
     <div className="kd-app">
       {/* Phone top bar */}
@@ -192,7 +196,7 @@ export default function DashboardLayout() {
           </div>
         </nav>
 
-        <main className="kd-main">
+        <main className={`kd-main${showChatHead ? ' has-chathead' : ''}`}>
           {isPreview && (
             <p className="kd-preview-bar kd-no-print">
               Preview mode: signed in as a sample {ROLE_LABELS[user.role].toLowerCase()} without the backend. Only available in development.
@@ -208,6 +212,8 @@ export default function DashboardLayout() {
           {user.role === 'student' ? <StudentGate key="student" /> : <StaffGate key="staff" />}
         </main>
       </div>
+
+      {showChatHead && <ChatHead />}
     </div>
   );
 }
