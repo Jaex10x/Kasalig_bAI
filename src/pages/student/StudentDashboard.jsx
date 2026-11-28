@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
 import useAuth from '../../context/useAuth';
-import Capybara from '../../components/capybara/Capybara';
-import { DIFFICULTY_LABELS, GAP_TYPES, subjectById } from '../../data/curriculum';
+import { DIFFICULTY_LABELS, GAP_TYPES } from '../../data/curriculum';
 import { greeting, useStudentProgress } from '../../hooks/dashboardHooks';
-import { Avatar, Bar, GapTypeChip, MasteryRing, SampleNotice, SeverityChip } from '../../components/dashboard/DashWidgets';
+import { MasteryRing, SampleNotice } from '../../components/dashboard/DashWidgets';
 import { ArrowIcon, ClockIcon, LevelIcon, StarIcon } from '../../components/dashboard/DashIcons';
-import { ChangesPanel, RecCard } from '../../components/dashboard/Recommendations';
+import { ChangesPanel } from '../../components/dashboard/Recommendations';
+import { MyCoursesPanel, OpenGapsPanel, TeacherNewsPanel } from '../../components/dashboard/HomePanels';
+import ThisWeekCard from '../../components/dashboard/ThisWeekCard';
+import UpNextSlider from '../../components/dashboard/UpNextSlider';
 
 const STEP_TITLES = { lesson: 'Short lesson', practice: 'Adaptive practice', check: 'Mastery check' };
 
@@ -29,6 +31,7 @@ export default function StudentDashboard() {
       meta: [[ClockIcon, 'Takes a minute']],
       to: '/dashboard/my-courses',
       cta: 'Find my classes',
+      recKey: 'enroll',
     };
   } else if (!hasHistory && startDiag) {
     // A class whose subject has a built-in diagnostic.
@@ -41,6 +44,7 @@ export default function StudentDashboard() {
       ],
       to: `/dashboard/quiz/${startDiag.id}`,
       cta: 'Start the diagnostic',
+      recKey: `quiz:${startDiag.id}`,
     };
   } else if (!hasHistory && quizzes.length) {
     // No built-in diagnostic for these subjects: start with a teacher's quiz.
@@ -51,6 +55,7 @@ export default function StudentDashboard() {
       meta: [[LevelIcon, `${quiz.questions.length} question${quiz.questions.length === 1 ? '' : 's'}`]],
       to: `/dashboard/quiz/${quiz.id}`,
       cta: 'Start the quiz',
+      recKey: `quiz:${quiz.id}`,
     };
   } else if (!hasHistory) {
     // Enrolled, but nothing to take yet.
@@ -73,6 +78,8 @@ export default function StudentDashboard() {
       ],
       to: '/dashboard/path',
       cta: 'Continue my path',
+      // Same key format as the engine's lesson / practice / check recommendations.
+      recKey: `${step.id}:${first.topic.id}:${first.gap.attemptId}`,
     };
   } else {
     hero = {
@@ -84,84 +91,39 @@ export default function StudentDashboard() {
     };
   }
 
+  // Up next: every recommendation except the one the hero already points at.
+  const upNext = recs.filter((r) => r.key !== hero.recKey);
+
   return (
     <div className="kd-home">
-      <aside className="kd-side">
-        <div className="kd-profile">
-          <Avatar name={user.fullName} size={42} />
-          <div>
-            <p className="kd-profile-name">{user.fullName}</p>
-            <p className="kd-profile-sub">{user.program ?? 'Student'}</p>
-          </div>
+      <header className="kd-home-head">
+        <div className="kd-home-greet">
+          <p>{greeting()},</p>
+          <h1>{firstName}, here&rsquo;s your next step.</h1>
         </div>
-
-        <p className="kd-eyebrow">{greeting()},</p>
-        <h1 className="kd-title">{firstName}! Let&rsquo;s close a few gaps.</h1>
-        <p className="kd-lede">
-          Every quiz shows which topics need work and why. Your learning path then takes you through
-          them in the right order.
-        </p>
-
-        <div className="kd-stat-pills">
-          <span className="kd-stat-pill">
-            <span aria-hidden="true">🔥</span> {streak.current}-day streak
-          </span>
-          <Link to="/dashboard/progress" className="kd-stat-pill">
-            <span aria-hidden="true">🏅</span> {earned.length}/{badges.length} badges
+        <div className="kd-home-pills">
+          <Link to="/dashboard/progress" className="kd-home-pill is-streak">
+            {streak.current}-day streak
+          </Link>
+          <Link to="/dashboard/progress" className="kd-home-pill">
+            {earned.length}/{badges.length} badges
+          </Link>
+          <Link to="/dashboard/quiz" className="kd-home-pill is-outline">
+            Take a quiz
           </Link>
         </div>
+      </header>
 
-        {!hasHistory && (
-          <SampleNotice>
-            {myCourses.length
-              ? 'No results yet. Take a quiz in one of your classes to find your gaps.'
-              : 'No classes yet. Enroll in your classes and their quizzes, gaps and progress show up here.'}
-          </SampleNotice>
-        )}
+      {!hasHistory && (
+        <SampleNotice>
+          {myCourses.length
+            ? 'No results yet. Take a quiz in one of your classes to find your gaps.'
+            : 'No classes yet. Enroll in your classes and their quizzes, gaps and progress show up here.'}
+        </SampleNotice>
+      )}
 
-        <div className="kd-side-head">
-          <h2>Active gaps</h2>
-          <span className="kd-count">{gaps.length}</span>
-        </div>
-
-        {!hasHistory ? (
-          <p className="kd-empty">Your gaps will appear here after your first quiz.</p>
-        ) : gaps.length === 0 ? (
-          <p className="kd-empty">No open gaps right now. 🎉</p>
-        ) : (
-          <ul className="kd-gap-list">
-            {gaps.map(({ topic, status: s }, i) => (
-              <li key={topic.id} className="kd-gap-item" style={{ '--delay': `${i * 70}ms` }}>
-                <span className="kd-gap-dot" style={{ background: topic.tint, color: topic.color }}>
-                  {topic.name[0]}
-                </span>
-                <div className="kd-gap-body">
-                  <div className="kd-gap-top">
-                    <strong>{topic.name}</strong>
-                    <span className="kd-score">
-                      <StarIcon size={15} /> {s.pct}%
-                    </span>
-                  </div>
-                  <div className="kd-chip-row">
-                    <GapTypeChip type={s.gap.type} short />
-                    <SeverityChip severity={s.gap.severity} />
-                  </div>
-                  <p>{s.gap.summary}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {latest && (
-          <Link to={`/dashboard/results/${latest.id}`} className="kd-text-link">
-            Open my latest gap report
-          </Link>
-        )}
-      </aside>
-
-      <section className="kd-stage kd-stage-student">
-        <article className="kd-hero">
+      <div className="kd-home-row">
+        <article className="kd-hero kd-home-hero">
           <div className="kd-hero-copy">
             <p className="kd-hero-eyebrow">{hero.eyebrow}</p>
             <h2 className="kd-hero-title">{hero.title}</h2>
@@ -172,89 +134,45 @@ export default function StudentDashboard() {
                 </li>
               ))}
             </ul>
-            <Link to={hero.to} className="kd-btn kd-btn-accent">
-              {hero.cta} <ArrowIcon size={18} />
-            </Link>
-          </div>
-          <div className="kd-hero-art">
-            <svg className="kd-hero-blob" viewBox="0 0 400 360" aria-hidden="true">
-              <path d="M300 20c70 30 100 110 80 190s-90 140-180 130S30 270 25 190 70 40 150 20s80-30 150 0z" fill="#de7a40" />
-              <path d="M40 300c60-30 90 20 150-10s70-110 140-120" fill="none" stroke="#f6a23c" strokeWidth="4" strokeLinecap="round" />
-              <path d="M330 40c20 10 30 30 28 50" fill="none" stroke="#f6a23c" strokeWidth="4" strokeLinecap="round" />
-            </svg>
-            <div className="kd-hero-ring">
-              <MasteryRing value={hasHistory ? overall : null} size={170} label="overall mastery" />
-            </div>
-          </div>
-        </article>
-
-        <article className="kd-card kd-home-recs">
-          <header className="kd-card-head">
-            <div>
-              <h2>Recommended for you</h2>
-              <p>Ranked from your latest results. Each one says why it was picked.</p>
-            </div>
-          </header>
-          {showChanges && <ChangesPanel compact changes={changes} onSeen={() => student.markChangesSeen(changes.attempt.id)} />}
-          <div className="kd-rec-list is-grid">
-            {recs.slice(0, 3).map((r, i) => (
-              <RecCard key={r.key} rec={r} rank={i + 1} onDone={student.markRecDone} compact />
-            ))}
-          </div>
-        </article>
-
-        <Link to="/dashboard/quiz" className="kd-cta">
-          <span className="kd-cta-title">{hasHistory ? 'Take a quiz' : 'Find your gaps'}</span>
-          <span className="kd-cta-sub">
-            {quizzes.length + diagnostics.length
-              ? `${quizzes.length + diagnostics.length} quiz${quizzes.length + diagnostics.length === 1 ? '' : 'zes'} available`
-              : 'Multiple choice, identification, true or false'}
-          </span>
-          <span className="kd-cta-go" aria-hidden="true">
-            <ArrowIcon size={20} />
-          </span>
-          <svg className="kd-cta-squiggle" viewBox="0 0 200 200" aria-hidden="true">
-            <path d="M150 10c-40 30 30 60-10 100s-90 10-120 60" fill="none" stroke="#fff" strokeOpacity="0.5" strokeWidth="5" strokeDasharray="12 14" strokeLinecap="round" />
-          </svg>
-          <span className="kd-cta-capy">
-            <Capybara mood="happy" message={hasHistory ? 'Ready for another round?' : 'Let’s find your gaps!'} />
-          </span>
-        </Link>
-
-        <ul className="kd-topic-list" aria-label="Mastery by topic">
-          {topics.map((t, i) => {
-            const s = status[t.id];
-            const open = s?.gap && !s.closed;
-            return (
-              <li key={t.id} style={{ '--delay': `${150 + i * 60}ms` }}>
-                <Link to={hasHistory ? '/dashboard/progress' : '/dashboard/quiz'} className="kd-topic-row">
-                  <span className="kd-topic-icon" style={{ '--c': t.color, '--t': t.tint }} aria-hidden="true">
-                    <span />
-                  </span>
-                  <span className="kd-topic-text">
-                    <strong>{t.name}</strong>
-                    <small>
-                      {subjectById(t.subjectId).name}
-                      {s?.closed && ' · gap closed ✓'}
-                      {open && ` · ${GAP_TYPES[s.gap.type].short.toLowerCase()} gap`}
-                    </small>
-                    <Bar pct={s?.pct ?? 0} />
-                  </span>
-                  <span className="kd-topic-score">
-                    {s ? (
-                      <>
-                        <StarIcon size={20} /> {s.pct}%
-                      </>
-                    ) : (
-                      <span className="kd-untested">Not tested</span>
-                    )}
-                  </span>
+            <div className="kd-home-hero-actions">
+              <Link to={hero.to} className="kd-btn kd-btn-accent">
+                {hero.cta} <ArrowIcon size={18} />
+              </Link>
+              {first && latest && (
+                <Link to={`/dashboard/results/${latest.id}`} className="kd-home-hero-why">
+                  Why this step?
                 </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+              )}
+            </div>
+          </div>
+          <MasteryRing
+            value={hasHistory ? overall : null}
+            size={150}
+            track="#4a3426"
+            color="#f6a23c"
+            label="overall mastery"
+          />
+        </article>
+
+        <ThisWeekCard attempts={attempts} activity={student.activity} />
+      </div>
+
+      <UpNextSlider
+        recs={upNext}
+        status={status}
+        quizzes={quizzes}
+        diagnostics={diagnostics}
+        onDone={student.markRecDone}
+        before={showChanges && <ChangesPanel compact changes={changes} onSeen={() => student.markChangesSeen(changes.attempt.id)} />}
+      />
+
+      <div className="kd-home-row kd-home-row-top">
+        <MyCoursesPanel myCourses={myCourses} topics={topics} status={status} />
+        <aside className="kd-home-aside">
+          <TeacherNewsPanel quizzes={quizzes} myCourses={myCourses} attempts={attempts} />
+          <OpenGapsPanel gaps={gaps} hasHistory={hasHistory} latest={latest} />
+        </aside>
+      </div>
     </div>
   );
 }
