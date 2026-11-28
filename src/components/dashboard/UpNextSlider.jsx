@@ -4,7 +4,9 @@ import { subjectById } from '../../data/curriculum';
 import { CHECK_SIZE } from '../../lib/engine';
 import TopicArt from './TopicArt';
 
-const COVERS = { CSIT221: '#8a3f12', CSIT226: '#1e3a6e', CSIT121: '#14532d' };
+// Cover colour per course: a warm palette (burnt orange, brick red, dark ochre).
+// Each keeps white text at 6.7:1 or better.
+const COVERS = { CSIT221: '#8a3f12', CSIT226: '#9b2c3a', CSIT121: '#7a5410' };
 const COVER_FALLBACK = '#2a1b12';
 const CARD_STEP = 250 + 12; // card width + gap
 
